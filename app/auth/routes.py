@@ -9,7 +9,7 @@ from app.auth.security import hash_password, verify_password
 import os
 from app.auth.jwt_utils import create_access_token
 from app.auth.dependencies import get_current_user
-from app.auth.schemas import (SignupRequest,LoginRequest,
+from app.schemas.auth_schema import (SignupRequest,LoginRequest,
                                TokenResponse,ForgotPasswordRequest
                                ,ResetPasswordRequest)
 from app.auth.email_service import (send_reset_email,
