@@ -12,6 +12,7 @@ uvicorn[standard]
 langchain_community
 langchain_core
 rank-bm25
+PyMuPDF
 jose
 pypdf
 fastapi_mail

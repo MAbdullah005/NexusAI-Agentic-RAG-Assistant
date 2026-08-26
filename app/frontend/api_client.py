@@ -30,7 +30,10 @@ API_THREADS = f"{API_BASE_URL}/threads"
 API_GENERATE_TITLE = f"{API_BASE_URL}/generate-title"
 
 API_UPLOAD_PDF = f"{API_BASE_URL}/upload-pdf"
-API_GET_PDF = f"{API_BASE_URL}/get_pdf/{{thread_id}}"
+#API_GET_PDF1 = f"{API_BASE_URL}/get_pdf/{{thread_id}}"
+
+API_THREAD_PDFS = f"{API_BASE_URL}/thread/{{}}/pdfs"
+API_GET_PDF = f"{API_BASE_URL}/get_pdf/{{}}/{{}}"
 
 API_SET_YOUTUBE = f"{API_BASE_URL}/set_youtube"
 API_GET_YOUTUBE = f"{API_BASE_URL}/get_youtube/{{thread_id}}"
@@ -352,15 +355,34 @@ def get_auth_headers():
         "Authorization": f"Bearer {token}"
     }
 
+def get_pdf(thread_id: str, doc_id: str):
 
-def get_pdf(thread_id: str):
     try:
-      response = requests.get(
-                API_GET_PDF.format(thread_id=thread_id),
-                headers=get_auth_headers(),
-                timeout=30
-            )
-      return response
+        response = requests.get(
+            API_GET_PDF.format(
+                thread_id,
+                doc_id
+            ),
+            headers=get_auth_headers(),
+            timeout=60
+        )
+
+        return response
+
+    except requests.RequestException:
+        return None
+
+
+def get_thread_pdfs(thread_id: str):
+    try:
+        response = requests.get(
+            API_THREAD_PDFS.format(thread_id),
+            headers=get_auth_headers(),
+            timeout=30
+        )
+
+        return response
+
     except requests.RequestException:
         return None
 

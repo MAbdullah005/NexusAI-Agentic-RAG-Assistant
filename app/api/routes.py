@@ -8,24 +8,17 @@ import os
 import sqlite3
 from fastapi import UploadFile, File, Form
 from fastapi.responses import FileResponse
+from langchain_core.messages import HumanMessage
 from app.services.youtube_ingest import ingest_youtube
 from app.auth.dependencies import get_current_user
 
-
-
-from langchain_core.messages import HumanMessage
-
-# Your existing bacsskend imports
-from typing import List
 from app.utils.logger import get_logger
 from app.core.retriever import thread_document_metadata
 from app.graph.agent_graph import chatbot
 from app.services.pdf_ingest import ingest_pdf
 from app.utils.common import extract_ai_text
-from datetime import datetime
 from app.memory.sqlite_memory import  get_thread_title_db, save_thread_title
 from app.llm.title_generator import generate_chat_title
-from app.core.retriever import retrieve_all_threads
 from langgraph.checkpoint.sqlite import SqliteSaver
 from fastapi import HTTPException
 logger = get_logger(__name__)
@@ -40,8 +33,9 @@ conn = sqlite3.connect(DB_PATH, check_same_thread=False)
 checkpointer = SqliteSaver(conn=conn)
 
 
-# ========================= Chat Endpoint =========================
-@router.post("/chat")
+#  Chat Endpoint 
+
+@router.post("/chat") # done
 async def chat_endpoint(
     data: dict,
     current_user: dict = Depends(get_current_user)
@@ -50,9 +44,6 @@ async def chat_endpoint(
     user_input = data["message"]
     thread_id = data["thread_id"]
 
-    # ==========================================
-    # Verify thread belongs to authenticated user
-    # ==========================================
 
     cursor = conn.cursor()
 
@@ -74,9 +65,7 @@ async def chat_endpoint(
             detail="Thread not found"
         )
 
-    # ==========================================
     # LangGraph configuration
-    # ==========================================
 
     CONFIG = {
         "configurable": {
@@ -85,9 +74,7 @@ async def chat_endpoint(
         "run_name": "chat_turn",
     }
 
-    # ==========================================
     # Run chatbot
-    # ==========================================
 
     response = chatbot.invoke(
         {
@@ -108,9 +95,9 @@ async def chat_endpoint(
     }
 
 
-# ========================= Threads =========================
+#  Threads 
 
-@router.get("/threads")
+@router.get("/threads") # done
 def get_threads(
     current_user: dict = Depends(get_current_user)
 ):
@@ -145,54 +132,9 @@ def get_threads(
     return result
 
 
+#  New Thread 
 
-# GENErate thread title
-@router.post('get-thread-title')
-def get_thread_title_db(thread_id: str) -> str:
-    try:
-        cursor = conn.cursor()
-
-        cursor.execute("""
-        SELECT title FROM threads WHERE thread_id=?
-        """, (thread_id,))
-
-        row = cursor.fetchone()
-
-        if row and row[0]:
-            return row[0]
-
-        return f"Chat {thread_id[:6]}"
-
-    except Exception as e:
-        logger.error(f"Failed to get thread title: {str(e)}")
-        return f"Chat {thread_id[:6]}"
-
-
-# save thread title 
-
-@router.post('save-thread-title')
-def save_thread_title_api(thread_id: str, title: str):
-    try:
-        cursor = conn.cursor()
-
-        cursor.execute("""
-        INSERT INTO threads (thread_id, title)
-        VALUES (?, ?)
-        ON CONFLICT(thread_id)
-        DO UPDATE SET title=excluded.title
-        """, (thread_id, title))
-
-        conn.commit()
-
-    except Exception as e:
-        logger.error(f"Failed to save thread title: {str(e)}")
-
-
-
-
-# ========================= New Thread =========================
-
-@router.post("/new-thread")
+@router.post("/new-thread") # done
 def new_thread(
     current_user: dict = Depends(get_current_user)
 ):
@@ -225,9 +167,9 @@ def new_thread(
     }
 
 
-# ========================= Title Generation =========================
+#  Title Generation 
 
-@router.post("/generate-title")
+@router.post("/generate-title") # done
 def generate_title(data: dict):
     thread_id = data["thread_id"]
     message = data["message"]
@@ -239,7 +181,7 @@ def generate_title(data: dict):
     return {"title": title}
 
 
-@router.post("/set_youtube")
+@router.post("/set_youtube")  # done
 def set_youtube(
     data: dict,
     current_user: dict = Depends(get_current_user)
@@ -248,10 +190,6 @@ def set_youtube(
 
     thread_id = data["thread_id"]
     youtube_url = data["youtube_url"]
-
-    # ==========================================
-    # Verify thread ownership
-    # ==========================================
 
     cursor = conn.cursor()
 
@@ -273,9 +211,6 @@ def set_youtube(
             detail="Thread not found"
         )
 
-    # ==========================================
-    # Extract YouTube video ID
-    # ==========================================
 
     from app.utils.hash_utils import hash_string
 
@@ -288,10 +223,6 @@ def set_youtube(
         )
 
     doc_hash = hash_string(video_id)
-
-    # ==========================================
-    # Check if document already exists
-    # ==========================================
 
     cursor.execute(
         """
@@ -308,9 +239,6 @@ def set_youtube(
 
         doc_id = row[0]
 
-        # ======================================
-        # Existing document
-        # ======================================
 
         cursor.execute(
             """
@@ -332,9 +260,7 @@ def set_youtube(
             "doc_id": doc_id
         }
 
-    # ==========================================
     # New YouTube document
-    # ==========================================
 
     doc_id = str(uuid.uuid4())
 
@@ -343,9 +269,7 @@ def set_youtube(
         doc_id
     )
 
-    # ==========================================
     # Save document with OWNER
-    # ==========================================
 
     cursor.execute(
         """
@@ -369,9 +293,7 @@ def set_youtube(
         )
     )
 
-    # ==========================================
     # Link document to thread
-    # ==========================================
 
     cursor.execute(
         """
@@ -400,7 +322,7 @@ UPLOAD_DIR = os.path.join(BASE_DIR, "uploaded_pdfs")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 # upload pdf endpoint
-@router.post("/upload-pdf")
+@router.post("/upload-pdf") # done
 async def upload_pdf(
     file: UploadFile = File(...),
     thread_id: str = Form(...),
@@ -410,9 +332,7 @@ async def upload_pdf(
 
     cursor = conn.cursor()
 
-    # ============================================================
     # 1. Verify thread belongs to authenticated user
-    # ============================================================
 
     cursor.execute(
         """
@@ -430,9 +350,7 @@ async def upload_pdf(
             detail="Thread not found"
         )
 
-    # ============================================================
     # 2. Read PDF
-    # ============================================================
 
     content = await file.read()
 
@@ -440,9 +358,7 @@ async def upload_pdf(
 
     doc_hash = hash_bytes(content)
 
-    # ============================================================
     # 3. Check whether THIS USER already has this document
-    # ============================================================
 
     cursor.execute(
         """
@@ -462,18 +378,16 @@ async def upload_pdf(
 
     user_document = cursor.fetchone()
 
-    # ============================================================
     # CASE 1:
     # Same user already owns this document
-    # ============================================================
-
+    
     if user_document:
 
         doc_id = user_document[0]
 
         cursor.execute(
             """
-            INSERT INTO thread_documents
+            INSERT OR IGNORE INTO thread_documents
             (
                 thread_id,
                 doc_id
@@ -496,10 +410,8 @@ async def upload_pdf(
             "message": "Document already exists for this user and was linked to the thread."
         }
 
-    # ============================================================
     # 4. Check whether the physical document already exists
     #    for ANOTHER user
-    # ============================================================
 
     cursor.execute(
         """
@@ -516,13 +428,11 @@ async def upload_pdf(
 
     existing_document = cursor.fetchone()
 
-    # ============================================================
     # CASE 2:
     # Same PDF exists for another user
     #
     # Reuse physical PDF + vectorstore,
     # but create a NEW documents row for this user.
-    # ============================================================
 
     if existing_document:
 
@@ -580,10 +490,8 @@ async def upload_pdf(
             "message": "Existing PDF/vectorstore reused and linked to this user."
         }
 
-    # ============================================================
     # CASE 3:
     # Completely new document
-    # ============================================================
 
     doc_id = str(uuid.uuid4())
 
@@ -592,16 +500,11 @@ async def upload_pdf(
         f"{doc_hash}.pdf"
     )
 
-    # ============================================================
-    # Save physical PDF
-    # ============================================================
+
 
     with open(file_path, "wb") as f:
         f.write(content)
 
-    # ============================================================
-    # Ingest / create vectorstore
-    # ============================================================
 
     vectorstore_path = ingest_pdf(
         file_bytes=content,
@@ -609,9 +512,6 @@ async def upload_pdf(
         doc_id=doc_id
     )
 
-    # ============================================================
-    # Save document metadata
-    # ============================================================
 
     cursor.execute(
         """
@@ -635,9 +535,7 @@ async def upload_pdf(
         )
     )
 
-    # ============================================================
     # Link document to thread
-    # ============================================================
 
     cursor.execute(
         """
@@ -666,7 +564,7 @@ async def upload_pdf(
 
 
 
-@router.get("/thread/{thread_id}/documents")
+@router.get("/thread/{thread_id}/documents") # done
 def get_thread_documents(
     thread_id: str,
     current_user: dict = Depends(get_current_user)
@@ -675,9 +573,7 @@ def get_thread_documents(
 
     cursor = conn.cursor()
 
-    # ==========================================
     # Verify thread ownership
-    # ==========================================
 
     cursor.execute(
         """
@@ -697,9 +593,7 @@ def get_thread_documents(
             detail="Thread not found"
         )
 
-    # ==========================================
     # Get documents
-    # ==========================================
 
     cursor.execute(
         """
@@ -738,7 +632,7 @@ def get_thread_documents(
 # detail ............
 
 
-@router.get("/thread/{thread_id}/details")
+@router.get("/thread/{thread_id}/details") # done
 def get_thread_details(
     thread_id: str,
     current_user: dict = Depends(get_current_user)
@@ -747,9 +641,7 @@ def get_thread_details(
 
     cursor = conn.cursor()
 
-    # ==========================================
     # Verify thread belongs to authenticated user
-    # ==========================================
 
     cursor.execute(
         """
@@ -773,9 +665,7 @@ def get_thread_details(
 
     title = thread[1] or f"Chat {thread_id[:6]}"
 
-    # ==========================================
     # Get LangGraph messages
-    # ==========================================
 
     state = chatbot.get_state(
         config={
@@ -804,9 +694,7 @@ def get_thread_details(
             }
         )
 
-    # ==========================================
     # Get documents belonging to this thread
-    # ==========================================
 
     cursor.execute(
         """
@@ -835,9 +723,6 @@ def get_thread_details(
             "source": row[2]
         })
 
-    # ==========================================
-    # Response
-    # ==========================================
 
     return {
         "thread_id": thread_id,
@@ -848,7 +733,7 @@ def get_thread_details(
 
 # get source ...........
 
-@router.get("/thread/{thread_id}/sources")
+@router.get("/thread/{thread_id}/sources") # done pending... not use till now
 def get_thread_sources(
     thread_id: str,
     current_user: dict = Depends(get_current_user)
@@ -857,10 +742,6 @@ def get_thread_sources(
 
     cursor = conn.cursor()
 
-    # ==========================================
-    # Verify thread ownership
-    # ==========================================
-
     cursor.execute(
         """
         SELECT thread_id
@@ -879,31 +760,24 @@ def get_thread_sources(
             detail="Thread not found"
         )
 
-    # ==========================================
-    # Get sources
-    # ==========================================
 
     return thread_document_metadata(thread_id)
 
 
+# get pdf 
 
 
-
-
-#''''''''''''''''''
-@router.get("/get_pdf/{thread_id}")
+@router.get("/get_pdf/{thread_id}/{doc_id}") # done
 def get_pdf(
     thread_id: str,
+    doc_id: str,
     current_user: dict = Depends(get_current_user)
 ):
     user_id = current_user["user_id"]
 
     cursor = conn.cursor()
 
-    # ==========================================
-    # Verify thread ownership
-    # ==========================================
-
+    # Verify thread belongs to user
     cursor.execute(
         """
         SELECT thread_id
@@ -914,18 +788,13 @@ def get_pdf(
         (thread_id, user_id)
     )
 
-    thread = cursor.fetchone()
-
-    if thread is None:
+    if cursor.fetchone() is None:
         raise HTTPException(
             status_code=404,
             detail="Thread not found"
         )
 
-    # ==========================================
-    # Get PDF belonging to this thread
-    # ==========================================
-
+    # Get specifically requested PDF
     cursor.execute(
         """
         SELECT d.source
@@ -933,11 +802,11 @@ def get_pdf(
         JOIN thread_documents td
             ON d.doc_id = td.doc_id
         WHERE td.thread_id = ?
+          AND td.doc_id = ?
           AND d.user_id = ?
           AND d.type = 'pdf'
-        ORDER BY d.created_at DESC
         """,
-        (thread_id, user_id)
+        (thread_id, doc_id, user_id)
     )
 
     row = cursor.fetchone()
@@ -945,24 +814,16 @@ def get_pdf(
     if row is None:
         raise HTTPException(
             status_code=404,
-            detail="No PDF found for this thread"
+            detail="PDF not found in this thread"
         )
 
     file_path = row[0]
-
-    # ==========================================
-    # Verify physical file exists
-    # ==========================================
 
     if not os.path.exists(file_path):
         raise HTTPException(
             status_code=404,
             detail="PDF file not found"
         )
-
-    # ==========================================
-    # Return PDF
-    # ==========================================
 
     return FileResponse(
         file_path,
@@ -971,7 +832,85 @@ def get_pdf(
 
 
 
-@router.get("/get_youtube/{thread_id}")
+@router.get("/thread/{thread_id}/pdfs") # done thing to notic
+def get_thread_pdfs(
+    thread_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    user_id = current_user["user_id"]
+
+    cursor = conn.cursor()
+
+    # Verify thread ownership
+    cursor.execute(
+        """
+        SELECT thread_id
+        FROM threads
+        WHERE thread_id = ?
+          AND user_id = ?
+        """,
+        (thread_id, user_id)
+    )
+
+    if cursor.fetchone() is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Thread not found"
+        )
+
+    # Get ALL PDFs belonging to this thread/user
+    cursor.execute(
+        """
+        SELECT
+            d.doc_id,
+            d.source,
+            d.created_at
+        FROM documents d
+        JOIN thread_documents td
+            ON d.doc_id = td.doc_id
+        WHERE td.thread_id = ?
+          AND d.user_id = ?
+          AND d.type = 'pdf'
+        ORDER BY d.created_at ASC
+        """,
+        (thread_id, user_id)
+    )
+
+    rows = cursor.fetchall()
+
+    if not rows:
+        raise HTTPException(
+            status_code=404,
+            detail="No PDFs found for this thread"
+        )
+
+    pdfs = []
+
+    for index, row in enumerate(rows, start=1):
+
+        doc_id = row[0]
+        file_path = row[1]
+
+        if not os.path.exists(file_path):
+            continue
+
+        pdfs.append({
+            "doc_id": doc_id,
+            "name": f"PDF {index}",
+            "created_at": row[2]
+        })
+
+    return {
+        "thread_id": thread_id,
+        "count": len(pdfs),
+        "pdfs": pdfs
+    }
+
+
+# get youtube
+
+
+@router.get("/get_youtube/{thread_id}") # done
 def get_youtube(
     thread_id: str,
     current_user: dict = Depends(get_current_user)
@@ -980,9 +919,6 @@ def get_youtube(
 
     cursor = conn.cursor()
 
-    # ==========================================
-    # Verify thread ownership
-    # ==========================================
 
     cursor.execute(
         """
@@ -1002,9 +938,7 @@ def get_youtube(
             detail="Thread not found"
         )
 
-    # ==========================================
     # Get YouTube videos belonging to this thread
-    # ==========================================
 
     cursor.execute(
         """
@@ -1027,9 +961,7 @@ def get_youtube(
             "youtube_url": None
         }
 
-    # ==========================================
     # Convert video IDs to YouTube URLs
-    # ==========================================
 
     videos = [
         f"https://www.youtube.com/watch?v={row[0]}"
@@ -1040,23 +972,3 @@ def get_youtube(
         "thread_id": thread_id,
         "youtube_url": videos
     }
-
-
-
-# ========================= Get Conversation =========================
-
-"""@router.get("/thread/{thread_id}")
-def get_thread(thread_id: str):
-    state = chatbot.get_state(config={"configurable": {"thread_id": thread_id}})
-    messages = state.values.get("messages", [])
-
-    formatted = []
-    for msg in messages:
-        role = "user" if isinstance(msg, HumanMessage) else "assistant"
-        formatted.append({
-            "role": role,
-            "content": msg.content
-        })
-
-    return formatted
-"""

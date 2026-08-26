@@ -2,6 +2,9 @@ import json
 import uuid
 
 import streamlit as st
+import fitz
+from PIL import Image
+import io
 
 from api_client import (
     create_thread,
@@ -10,6 +13,7 @@ from api_client import (
     get_thread_documents,
     get_thread_sources,
     send_message,
+    get_thread_pdfs,
     set_youtube,
     get_youtube,
     upload_pdf,
@@ -217,6 +221,7 @@ def load_thread(thread_id):
                 "documents",
                 []
             )
+            print("Here is the document got for this thread ", documents)
 
             st.session_state["pdf_uploaded"] = any(
                 doc.get("type") == "pdf"
@@ -530,16 +535,20 @@ def render_sidebar():
 # ============================================================
 # CHAT AREA
 # ============================================================
-
 def render_chat():
 
     thread_id = st.session_state["thread_id"]
 
     st.subheader("💬 Chat")
 
-    chat_container = st.container()
+    # ============================================================
+    # CHAT HISTORY CONTAINER
+    # ============================================================
 
-    with chat_container:
+    with st.container(
+        height=650,
+        border=True
+    ):
 
         for message in st.session_state[
             "message_history"
@@ -552,6 +561,10 @@ def render_chat():
                 st.write(
                     message["content"]
                 )
+
+    # ============================================================
+    # CHAT INPUT
+    # ============================================================
 
     user_input = st.chat_input(
         "Ask something..."
@@ -579,9 +592,9 @@ def render_chat():
 
         st.rerun()
 
-    # ---------------------------------------------
-    # Process pending message
-    # ---------------------------------------------
+    # ============================================================
+    # PROCESS PENDING MESSAGE
+    # ============================================================
 
     if st.session_state["message_history"]:
 
@@ -612,9 +625,9 @@ def render_chat():
                 "message_history"
             ][-1]["content"] = ai_message
 
-            # -------------------------------------
-            # Generate title after first message
-            # -------------------------------------
+            # ====================================================
+            # GENERATE TITLE AFTER FIRST MESSAGE
+            # ====================================================
 
             if len(
                 st.session_state[
@@ -640,10 +653,324 @@ def render_chat():
 
             st.rerun()
 
-
 # ============================================================
 # VIDEO + PDF
 # ============================================================
+# ============================================================
+# VIDEO + PDF
+# ============================================================
+def render_pdf_page(
+    pdf_bytes,
+    page_number,
+    zoom=1.2
+):
+    doc = fitz.open(
+        stream=pdf_bytes,
+        filetype="pdf"
+    )
+
+    page = doc.load_page(page_number)
+
+    matrix = fitz.Matrix(
+        zoom,
+        zoom
+    )
+
+    pix = page.get_pixmap(
+        matrix=matrix,
+        alpha=False
+    )
+
+    image = Image.open(
+        io.BytesIO(
+            pix.tobytes("png")
+        )
+    )
+
+    doc.close()
+
+    return image
+
+
+
+def render_pdf_viewer(
+    pdf_bytes,
+    pdf_name="PDF"
+):
+    doc = fitz.open(
+        stream=pdf_bytes,
+        filetype="pdf"
+    )
+
+    total_pages = len(doc)
+
+    doc.close()
+
+    st.caption(
+        f"📄 {pdf_name} — {total_pages} pages"
+    )
+
+    # Page search
+    page_number = st.number_input(
+        "Go to page",
+        min_value=1,
+        max_value=total_pages,
+        value=1,
+        step=1,
+        key=f"page_{pdf_name}"
+    )
+
+    # Scrollable PDF box
+    with st.container(
+        height=700,
+        border=True
+    ):
+
+        for page_number_index in range(
+            total_pages
+        ):
+
+            image = render_pdf_page(
+                pdf_bytes,
+                page_number_index,
+                zoom=1.2
+            )
+
+            st.image(
+                image,
+                width="stretch"
+            )
+
+            st.caption(
+                f"Page {page_number_index + 1} / {total_pages}"
+            )
+
+
+def render_pdf():
+
+    # ============================================================
+    # 1. Check whether a PDF exists
+    # ============================================================
+
+    if not st.session_state.get("pdf_uploaded", False):
+
+        st.info("📄 Upload a PDF to view it here.")
+        return
+
+    thread_id = st.session_state.get("thread_id")
+
+    if not thread_id:
+
+        st.warning("No active thread.")
+        return
+
+    # ============================================================
+    # 2. Get ALL PDFs for this thread
+    # ============================================================
+
+    pdf_response_list = get_thread_pdfs(thread_id)
+
+    if (
+        pdf_response_list is None
+        or pdf_response_list.status_code != 200
+    ):
+
+        if pdf_response_list is None:
+
+            st.error("Failed to connect to PDF list API.")
+
+        else:
+
+            try:
+                detail = pdf_response_list.json().get(
+                    "detail",
+                    "Unknown error"
+                )
+            except Exception:
+                detail = pdf_response_list.text
+
+            st.error(
+                f"PDF List Error "
+                f"({pdf_response_list.status_code}): {detail}"
+            )
+
+        return
+
+    # ============================================================
+    # 3. Convert response -> dictionary
+    # ============================================================
+
+    pdf_data = pdf_response_list.json()
+
+    pdfs = pdf_data.get("pdfs", [])
+
+    if not pdfs:
+
+        st.info("No PDFs found for this thread.")
+        return
+
+    # ============================================================
+    # 4. PDF selector
+    # ============================================================
+
+    pdf_options = {
+        pdf["doc_id"]: pdf.get(
+            "name",
+            f"PDF {index + 1}"
+        )
+        for index, pdf in enumerate(pdfs)
+    }
+
+    selected_doc_id = st.selectbox(
+        "📚 Select PDF",
+        options=list(pdf_options.keys()),
+        format_func=lambda doc_id: pdf_options[doc_id],
+        key=f"selected_pdf_{thread_id}"
+    )
+
+    # ============================================================
+    # 5. Get selected PDF
+    # ============================================================
+
+    pdf_response = get_pdf(
+        thread_id,
+        doc_id=selected_doc_id
+    )
+
+    if (
+        pdf_response is None
+        or pdf_response.status_code != 200
+    ):
+
+        if pdf_response is None:
+
+            st.error("Failed to connect to PDF API.")
+
+        else:
+
+            try:
+                detail = pdf_response.json().get(
+                    "detail",
+                    "Unknown error"
+                )
+            except Exception:
+                detail = pdf_response.text
+
+            st.error(
+                f"PDF Error "
+                f"({pdf_response.status_code}): "
+                f"{detail}"
+            )
+
+        return
+
+    # ============================================================
+    # 6. Read PDF
+    # ============================================================
+
+    pdf_bytes = pdf_response.content
+
+    try:
+
+        doc = fitz.open(
+            stream=pdf_bytes,
+            filetype="pdf"
+        )
+
+        total_pages = len(doc)
+
+        doc.close()
+
+    except Exception as e:
+
+        st.error(
+            f"Unable to open PDF: {e}"
+        )
+
+        return
+
+    if total_pages == 0:
+
+        st.warning(
+            "The PDF contains no pages."
+        )
+
+        return
+
+    # ============================================================
+    # 7. PDF information
+    # ============================================================
+
+    selected_pdf_name = pdf_options[selected_doc_id]
+
+    st.markdown(
+        f"### 📄 {selected_pdf_name}"
+    )
+
+    st.caption(
+        f"{total_pages} page(s)"
+    )
+
+    # ============================================================
+    # 8. Quick page search
+    # ============================================================
+
+    page_number = st.number_input(
+        "🔎 Go to page",
+        min_value=1,
+        max_value=total_pages,
+        value=1,
+        step=1,
+        key=f"pdf_page_{thread_id}_{selected_doc_id}"
+    )
+
+    # ============================================================
+    # 9. Scrollable PDF BOOK
+    # ============================================================
+
+    st.markdown(
+        "📖 **Document Viewer**"
+    )
+
+    with st.container(
+        height=700,
+        border=True
+    ):
+
+        for page_index in range(total_pages):
+
+            try:
+
+                image = render_pdf_page(
+                    pdf_bytes,
+                    page_index,
+                    zoom=1.2
+                )
+
+                st.image(
+                    image,
+                    width="stretch"
+                )
+
+                st.caption(
+                    f"Page {page_index + 1} / {total_pages}"
+                )
+
+            except Exception as e:
+
+                st.error(
+                    f"Failed to render page "
+                    f"{page_index + 1}: {e}"
+                )
+
+    # ============================================================
+    # 10. Selected page information
+    # ============================================================
+
+    st.caption(
+        f"Selected page: {page_number} / {total_pages}"
+    )
+
 
 def render_media():
 
@@ -657,14 +984,10 @@ def render_media():
     # VIDEO
     # ========================================================
 
-    if st.session_state.get(
-        "youtube_url"
-    ):
+    if st.session_state.get("youtube_url"):
 
         st.video(
-            st.session_state[
-                "youtube_url"
-            ]
+            st.session_state["youtube_url"]
         )
 
     else:
@@ -682,52 +1005,7 @@ def render_media():
     # PDF
     # ========================================================
 
-    if st.session_state.get("pdf_uploaded"):
-
-      pdf_response = get_pdf(thread_id)
-
-      if pdf_response is not None and pdf_response.status_code == 200:
-
-        pdf_base64 = base64.b64encode(
-            pdf_response.content
-        ).decode("utf-8")
-
-        pdf_html = f"""
-        <iframe
-            src="data:application/pdf;base64,{pdf_base64}"
-            width="100%"
-            height="600px"
-            style="border:none;">
-        </iframe>
-        """
-
-        st.markdown(
-            pdf_html,
-            unsafe_allow_html=True
-        )
-
-      else:
-
-        if pdf_response is None:
-            st.error("Failed to connect to PDF API")
-
-        else:
-            try:
-                detail = pdf_response.json().get(
-                    "detail",
-                    "Unknown error"
-                )
-            except Exception:
-                detail = pdf_response.text
-
-            st.error(
-                f"PDF Error ({pdf_response.status_code}): {detail}"
-            )
-
-    else:
-
-      st.info("Upload a PDF to view it here")
-
+    render_pdf()
 # ============================================================
 # DOWNLOAD CHAT
 # ============================================================
@@ -764,44 +1042,33 @@ def render_chat_ui():
     # --------------------------------------------------------
     # Global UI
     # --------------------------------------------------------
-
     st.markdown(
-        """
-        <style>
-        .block-container {
-            padding: 0rem !important;
-        }
+      """
+      <style>
 
-        .main > div {
-            gap: 0rem !important;
-        }
+    .block-container {
+        padding: 0rem !important;
+    }
 
-        section[data-testid="stSidebar"] {
-            width: 240px !important;
-        }
+    .main > div {
+        gap: 0rem !important;
+    }
 
-        div[data-testid="column"] {
-            padding: 0px !important;
-        }
+    section[data-testid="stSidebar"] {
+        width: 240px !important;
+    }
 
-        .chat-box {
-            height: 80vh;
-            overflow-y: auto;
-        }
+    div[data-testid="column"] {
+        padding: 0px !important;
+    }
 
-        .video-box {
-            height: 90vh;
-            overflow-y: auto;
-            padding: 0px;
-            margin: 0px;
-        }
+    .element-container {
+        margin-bottom: 0px !important;
+    }
 
-        .element-container {
-            margin-bottom: 0px !important;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True
+    </style>
+    """,
+      unsafe_allow_html=True 
     )
 
     # --------------------------------------------------------
