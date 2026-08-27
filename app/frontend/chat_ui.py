@@ -342,6 +342,9 @@ def render_sidebar():
         ] = []
 
         st.rerun()
+    if st.sidebar.button(f"⬇️ Download Chat History",
+                         use_container_width=True):
+        render_download()
 
     st.sidebar.divider()
 
@@ -546,7 +549,7 @@ def render_chat():
     # ============================================================
 
     with st.container(
-        height=650,
+        height=800,
         border=True
     ):
 
@@ -815,7 +818,7 @@ def render_pdf():
 
     pdf_options = {
         pdf["doc_id"]: pdf.get(
-            "name",
+            "filename",
             f"PDF {index + 1}"
         )
         for index, pdf in enumerate(pdfs)
@@ -1123,5 +1126,3 @@ def render_chat_ui():
     # --------------------------------------------------------
     # Download
     # --------------------------------------------------------
-
-    render_download()

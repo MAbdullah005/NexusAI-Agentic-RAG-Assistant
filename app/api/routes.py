@@ -451,9 +451,10 @@ async def upload_pdf(
                 type,
                 content_hash,
                 source,
-                vectorstore_path
+                vectorstore_path,
+                filename
             )
-            VALUES (?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 doc_id,
@@ -461,7 +462,8 @@ async def upload_pdf(
                 "pdf",
                 doc_hash,
                 file_path,
-                vectorstore_path
+                vectorstore_path,
+                file.filename
             )
         )
 
@@ -521,9 +523,10 @@ async def upload_pdf(
             type,
             content_hash,
             source,
-            vectorstore_path
+            vectorstore_path,
+            filename
         )
-        VALUES (?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
         """,
         (
             doc_id,
@@ -531,7 +534,8 @@ async def upload_pdf(
             "pdf",
             doc_hash,
             file_path,
-            vectorstore_path
+            vectorstore_path,
+            file.filename
         )
     )
 
@@ -863,6 +867,7 @@ def get_thread_pdfs(
         """
         SELECT
             d.doc_id,
+            d.filename,
             d.source,
             d.created_at
         FROM documents d
@@ -889,15 +894,17 @@ def get_thread_pdfs(
     for index, row in enumerate(rows, start=1):
 
         doc_id = row[0]
-        file_path = row[1]
+        filename=row[1]
+        file_path = row[2]
+        created_at=row[3]
 
         if not os.path.exists(file_path):
             continue
 
         pdfs.append({
             "doc_id": doc_id,
-            "name": f"PDF {index}",
-            "created_at": row[2]
+            "filename":filename or f"PDF {index}",
+            "created_at": created_at
         })
 
     return {

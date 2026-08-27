@@ -4,6 +4,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 from langchain_core.runnables import RunnableConfig
+import traceback
 from app.core.retriever import get_thread_retriever
 from app.llm.llm_config import llm
 from langchain_core.tools import InjectedToolArg
@@ -68,29 +69,70 @@ def unified_rag_tool(query: str, config:Annotated[RunnableConfig,InjectedToolArg
         if not docs:
             return "❌ No relevant information found."
 
-        context = "\n\n".join(d.page_content for d in docs[:4])
+        context_parts = []
+ 
+        for i, doc in enumerate(docs[:8], start=1):
+
+           doc_id = doc.metadata.get(
+           "doc_id",
+           "unknown"
+         )
+
+           source = doc.metadata.get(
+          "source",
+          "unknown"
+         )
+
+           pdf_name = os.path.basename(source)
+
+           context_parts.append(
+            f"""
+            --- Retrieved Chunk {i} ---
+            Document ID: {doc_id}
+            Document: {pdf_name}
+
+            {doc.page_content}
+               """
+            )
+
+        context = "\n".join(context_parts)
 
         print("/n \n here is docs context which get from retriver /n",context)
 
         return f"""
-             You are answering ONLY from retrieved context.
- 
-             Rules:
+You are answering ONLY from the retrieved context.
 
-             - Never use outside knowledge.
-             - If information is missing, say so.
-             - Do not invent facts.
-             - Do not merge unrelated chunks.
-              - If summarizing a document or video,
-             summarize the retrieved content only.
- 
-            Context: {context}
-            sources: {source_type}
+Rules:
 
-            Question: {query}
-    """
+- Never use outside knowledge.
+- If information is missing, say so.
+- Do not invent facts.
+- Do not merge unrelated chunks.
+- Treat each document as a separate source.
+- If the question refers to a specific document, answer only from that document.
+- If multiple documents contain relevant information, clearly distinguish them.
+- If the user asks about a document that is not represented in the retrieved context, say that the relevant information was not found.
+- If summarizing a document or video, summarize only the retrieved content.
+
+Available source type:
+{source_type}
+
+Retrieved context:
+
+{context}
+
+Question:
+{query}
+"""
 
     except Exception as e:
-        return f"❌ RAG tool error: {str(e)}"
-    
+       
+      print("\n" + "=" * 80)
+      print("❌ UNIFIED RAG TOOL ERROR")
+      print("=" * 80)
 
+      traceback.print_exc()
+
+      print("=" * 80 + "\n")
+
+      return f"❌ RAG tool error: {str(e)}"

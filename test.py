@@ -8,18 +8,7 @@ os.makedirs(DB_DIR, exist_ok=True)
 conn = sqlite3.connect(DB_PATH, check_same_thread=False)
 cursor=conn.cursor()
 data=cursor.execute("""
-CREATE TABLE  documents (
-    doc_id TEXT PRIMARY KEY,
-    user_id INTEGER NOT NULL,
-    type TEXT,
-    content_hash TEXT NOT NULL,
-    source TEXT,
-    vectorstore_path TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-    FOREIGN KEY(user_id)
-        REFERENCES users(user_id)
-);
+ALTER TABLE documents ADD COLUMN filename TEXT DEFAULT NULL;
 """)
 
 for d in data:
