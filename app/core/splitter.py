@@ -6,9 +6,7 @@ def chunk_text(text: str):
     text_length = len(text)
     logger.info(f"Here is the length of text this for this time {text_length}")
 
-    # ============================
     # 1. Adaptive chunk sizing
-    # ============================
 
     if text_length < 10_000:
         chunk_size = 1000

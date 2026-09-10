@@ -17,9 +17,7 @@ from app.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
-# ================================
 # Database Setup
-# ================================
 
 DB_DIR = "database"
 DB_PATH = os.path.join(DB_DIR, "chatbot_conv.db")
@@ -125,9 +123,7 @@ def init_db():
     conn.commit()
 
 
-# ================================
 # Thread Utilities
-# ================================
 
 def retrieve_all_threads(user_id:int) -> List[str]:
     """

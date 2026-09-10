@@ -3,7 +3,7 @@ import uuid
 from fastapi import Form
 from fastapi.responses import FileResponse
 from app.services.youtube_loader import extract_video_id
-from app.core.retriever import clear_thread_cache
+from app.core.retriever import clear_thread_retriever_cache
 import os
 import sqlite3
 from fastapi import UploadFile, File, Form
@@ -253,7 +253,7 @@ def set_youtube(
 
         conn.commit()
 
-        clear_thread_cache(thread_id)
+        clear_thread_retriever_cache(thread_id)
 
         return {
             "status": "reused",
@@ -308,7 +308,7 @@ def set_youtube(
 
     conn.commit()
 
-    clear_thread_cache(thread_id)
+    clear_thread_retriever_cache(thread_id)
 
     return {
         "status": "ok",
@@ -402,7 +402,7 @@ async def upload_pdf(
 
         conn.commit()
 
-        clear_thread_cache(thread_id)
+        clear_thread_retriever_cache(thread_id)
 
         return {
             "status": "reused",
@@ -484,7 +484,7 @@ async def upload_pdf(
 
         conn.commit()
 
-        clear_thread_cache(thread_id)
+        clear_thread_retriever_cache(thread_id)
 
         return {
             "status": "reused_physical_file",
@@ -557,7 +557,7 @@ async def upload_pdf(
 
     conn.commit()
 
-    clear_thread_cache(thread_id)
+    clear_thread_retriever_cache(thread_id)
 
     return {
         "status": "new",

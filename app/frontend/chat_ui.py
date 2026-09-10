@@ -23,9 +23,7 @@ from api_client import (
 from auth_ui import logout
 import base64
 
-# ============================================================
 # INITIALIZE CHAT STATE
-# ============================================================
 
 def initialize_chat_state():
 
@@ -54,9 +52,7 @@ def initialize_chat_state():
         st.session_state["selected_thread"] = None
 
 
-# ============================================================
 # CREATE INITIAL THREAD
-# ============================================================
 
 def ensure_thread():
 
@@ -83,9 +79,7 @@ def ensure_thread():
     st.session_state["thread_id"] = data["thread_id"]
 
 
-# ============================================================
 # RESET THREAD STATE
-# ============================================================
 
 def reset_thread_state():
 
@@ -97,9 +91,7 @@ def reset_thread_state():
     st.session_state["uploaded_file_name"] = None
 
 
-# ============================================================
 # CREATE NEW CHAT
-# ============================================================
 
 def create_new_chat():
 
@@ -128,9 +120,7 @@ def create_new_chat():
     st.rerun()
 
 
-# ============================================================
 # LOAD THREAD
-# ============================================================
 
 def load_thread(thread_id):
 
@@ -168,9 +158,7 @@ def load_thread(thread_id):
         details.get("messages", [])
     )
 
-    # ---------------------------------------------
     # Load YouTube
-    # ---------------------------------------------
 
     try:
 
@@ -199,9 +187,7 @@ def load_thread(thread_id):
 
         st.session_state["youtube_url"] = None
 
-    # ---------------------------------------------
     # Load PDF state
-    # ---------------------------------------------
 
     try:
 
@@ -237,9 +223,7 @@ def load_thread(thread_id):
     st.rerun()
 
 
-# ============================================================
 # CHAT MESSAGE API
-# ============================================================
 
 def call_chat_api(user_input, thread_id):
 
@@ -282,10 +266,7 @@ def call_chat_api(user_input, thread_id):
         return "⚠️ Invalid response from server."
 
 
-# ============================================================
 # SIDEBAR
-# ============================================================
-
 def render_sidebar():
 
     token = st.session_state["access_token"]
@@ -295,9 +276,7 @@ def render_sidebar():
         "LangGraph Multi-Tool Chatbot"
     )
 
-    # ---------------------------------------------
     # User
-    # ---------------------------------------------
 
     st.sidebar.write(
         f"👤 {user.get('email', 'User')}"
@@ -305,9 +284,7 @@ def render_sidebar():
 
     st.sidebar.divider()
 
-    # ---------------------------------------------
     # Current Thread
-    # ---------------------------------------------
 
     thread_id = st.session_state["thread_id"]
 
@@ -317,9 +294,7 @@ def render_sidebar():
             f"**Thread ID:** `{thread_id[:8]}`"
         )
 
-    # ---------------------------------------------
     # New Chat
-    # ---------------------------------------------
 
     if st.sidebar.button(
         "➕ New Chat",
@@ -328,9 +303,7 @@ def render_sidebar():
 
         create_new_chat()
 
-    # ---------------------------------------------
     # Clear Conversation
-    # ---------------------------------------------
 
     if st.sidebar.button(
         "🗑️ Clear Conversation",
@@ -348,9 +321,7 @@ def render_sidebar():
 
     st.sidebar.divider()
 
-    # ========================================================
     # PDF
-    # ========================================================
 
     uploaded_pdf = st.sidebar.file_uploader(
         "Upload PDF",
@@ -408,9 +379,7 @@ def render_sidebar():
 
     st.sidebar.divider()
 
-    # ========================================================
     # YOUTUBE
-    # ========================================================
 
     st.sidebar.subheader(
         "🎥 YouTube Video"
@@ -476,9 +445,7 @@ def render_sidebar():
 
                 st.sidebar.error(detail)
 
-    # ========================================================
     # PAST CONVERSATIONS
-    # ========================================================
 
     st.sidebar.divider()
 
@@ -521,9 +488,7 @@ def render_sidebar():
                 "Failed to load conversations."
             )
 
-    # ========================================================
     # LOGOUT
-    # ========================================================
 
     st.sidebar.divider()
 
@@ -535,18 +500,15 @@ def render_sidebar():
         logout()
 
 
-# ============================================================
 # CHAT AREA
-# ============================================================
+
 def render_chat():
 
     thread_id = st.session_state["thread_id"]
 
     st.subheader("💬 Chat")
 
-    # ============================================================
     # CHAT HISTORY CONTAINER
-    # ============================================================
 
     with st.container(
         height=800,
@@ -565,9 +527,7 @@ def render_chat():
                     message["content"]
                 )
 
-    # ============================================================
     # CHAT INPUT
-    # ============================================================
 
     user_input = st.chat_input(
         "Ask something..."
@@ -595,9 +555,7 @@ def render_chat():
 
         st.rerun()
 
-    # ============================================================
     # PROCESS PENDING MESSAGE
-    # ============================================================
 
     if st.session_state["message_history"]:
 
@@ -628,9 +586,7 @@ def render_chat():
                 "message_history"
             ][-1]["content"] = ai_message
 
-            # ====================================================
             # GENERATE TITLE AFTER FIRST MESSAGE
-            # ====================================================
 
             if len(
                 st.session_state[
@@ -656,12 +612,8 @@ def render_chat():
 
             st.rerun()
 
-# ============================================================
 # VIDEO + PDF
-# ============================================================
-# ============================================================
-# VIDEO + PDF
-# ============================================================
+
 def render_pdf_page(
     pdf_bytes,
     page_number,
@@ -751,9 +703,7 @@ def render_pdf_viewer(
 
 def render_pdf():
 
-    # ============================================================
     # 1. Check whether a PDF exists
-    # ============================================================
 
     if not st.session_state.get("pdf_uploaded", False):
 
@@ -767,9 +717,7 @@ def render_pdf():
         st.warning("No active thread.")
         return
 
-    # ============================================================
     # 2. Get ALL PDFs for this thread
-    # ============================================================
 
     pdf_response_list = get_thread_pdfs(thread_id)
 
@@ -799,9 +747,7 @@ def render_pdf():
 
         return
 
-    # ============================================================
     # 3. Convert response -> dictionary
-    # ============================================================
 
     pdf_data = pdf_response_list.json()
 
@@ -812,9 +758,7 @@ def render_pdf():
         st.info("No PDFs found for this thread.")
         return
 
-    # ============================================================
     # 4. PDF selector
-    # ============================================================
 
     pdf_options = {
         pdf["doc_id"]: pdf.get(
@@ -831,9 +775,7 @@ def render_pdf():
         key=f"selected_pdf_{thread_id}"
     )
 
-    # ============================================================
     # 5. Get selected PDF
-    # ============================================================
 
     pdf_response = get_pdf(
         thread_id,
@@ -867,9 +809,7 @@ def render_pdf():
 
         return
 
-    # ============================================================
     # 6. Read PDF
-    # ============================================================
 
     pdf_bytes = pdf_response.content
 
@@ -900,9 +840,7 @@ def render_pdf():
 
         return
 
-    # ============================================================
     # 7. PDF information
-    # ============================================================
 
     selected_pdf_name = pdf_options[selected_doc_id]
 
@@ -914,9 +852,7 @@ def render_pdf():
         f"{total_pages} page(s)"
     )
 
-    # ============================================================
     # 8. Quick page search
-    # ============================================================
 
     page_number = st.number_input(
         "🔎 Go to page",
@@ -927,9 +863,7 @@ def render_pdf():
         key=f"pdf_page_{thread_id}_{selected_doc_id}"
     )
 
-    # ============================================================
     # 9. Scrollable PDF BOOK
-    # ============================================================
 
     st.markdown(
         "📖 **Document Viewer**"
@@ -966,9 +900,7 @@ def render_pdf():
                     f"{page_index + 1}: {e}"
                 )
 
-    # ============================================================
-    # 10. Selected page information
-    # ============================================================
+
 
     st.caption(
         f"Selected page: {page_number} / {total_pages}"
@@ -982,10 +914,6 @@ def render_media():
     st.subheader(
         "🎥 Video + 📄 Document"
     )
-
-    # ========================================================
-    # VIDEO
-    # ========================================================
 
     if st.session_state.get("youtube_url"):
 
@@ -1004,14 +932,9 @@ def render_media():
         unsafe_allow_html=True
     )
 
-    # ========================================================
-    # PDF
-    # ========================================================
 
     render_pdf()
-# ============================================================
-# DOWNLOAD CHAT
-# ============================================================
+
 
 def render_download():
 
@@ -1032,19 +955,13 @@ def render_download():
     )
 
 
-# ============================================================
-# MAIN CHAT UI
-# ============================================================
-
 def render_chat_ui():
 
     initialize_chat_state()
 
     ensure_thread()
 
-    # --------------------------------------------------------
-    # Global UI
-    # --------------------------------------------------------
+   
     st.markdown(
       """
       <style>
@@ -1074,23 +991,12 @@ def render_chat_ui():
       unsafe_allow_html=True 
     )
 
-    # --------------------------------------------------------
-    # Sidebar
-    # --------------------------------------------------------
-
     render_sidebar()
-
-    # --------------------------------------------------------
-    # Main title
-    # --------------------------------------------------------
 
     st.title(
         "Multi Utility Chatbot"
     )
 
-    # --------------------------------------------------------
-    # Resize
-    # --------------------------------------------------------
 
     split_ratio = st.slider(
         "Resize Chat ↔ Video",
@@ -1107,22 +1013,13 @@ def render_chat_ui():
         gap="small"
     )
 
-    # --------------------------------------------------------
-    # Chat
-    # --------------------------------------------------------
 
     with col_chat:
 
         render_chat()
 
-    # --------------------------------------------------------
-    # Video + PDF
-    # --------------------------------------------------------
 
     with col_video:
 
         render_media()
-
-    # --------------------------------------------------------
-    # Download
-    # --------------------------------------------------------
+        

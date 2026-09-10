@@ -1,16 +1,12 @@
 import requests
 import streamlit as st
 
-# ============================================================
 # API CONFIGURATION
-# ============================================================
 
 API_BASE_URL = "http://localhost:8000"
 
 
-# ============================================================
-# AUTH ENDPOINTS
-# ============================================================
+# AUTH Eenpoint
 
 API_LOGIN = f"{API_BASE_URL}/auth/login"
 API_SIGNUP = f"{API_BASE_URL}/auth/signup"
@@ -19,10 +15,7 @@ API_FORGOT_PASSWORD = f"{API_BASE_URL}/auth/forgot-password"
 API_RESET_PASSWORD = f"{API_BASE_URL}/auth/reset-password"
 
 
-# ============================================================
-# CHAT ENDPOINTS
-# ============================================================
-
+# Chat endpoint
 API_CHAT = f"{API_BASE_URL}/chat"
 API_NEW_THREAD = f"{API_BASE_URL}/new-thread"
 API_THREADS = f"{API_BASE_URL}/threads"
@@ -43,9 +36,7 @@ API_THREAD_DOCUMENTS = f"{API_BASE_URL}/thread/{{thread_id}}/documents"
 API_THREAD_SOURCES = f"{API_BASE_URL}/thread/{{thread_id}}/sources"
 
 
-# ============================================================
-# AUTH HEADERS
-# ============================================================
+# AUTH Header
 
 def auth_headers(token: str | None):
     """
@@ -60,9 +51,7 @@ def auth_headers(token: str | None):
     }
 
 
-# ============================================================
 # LOGIN
-# ============================================================
 
 def login(email: str, password: str):
     """
@@ -85,9 +74,7 @@ def login(email: str, password: str):
         return None
 
 
-# ============================================================
 # SIGNUP
-# ============================================================
 
 def signup(email: str, password: str):
     """
@@ -110,10 +97,6 @@ def signup(email: str, password: str):
         return None
 
 
-# ============================================================
-# CURRENT USER
-# ============================================================
-
 def get_current_user(token: str):
     """
     Get authenticated user information.
@@ -131,10 +114,6 @@ def get_current_user(token: str):
     except requests.RequestException:
         return None
 
-
-# ============================================================
-# FORGOT PASSWORD
-# ============================================================
 
 def forgot_password(email: str):
     """
@@ -156,10 +135,6 @@ def forgot_password(email: str):
         return None
 
 
-# ============================================================
-# RESET PASSWORD
-# ============================================================
-
 def reset_password(token: str, new_password: str):
     """
     Reset password using the token received by email.
@@ -180,10 +155,6 @@ def reset_password(token: str, new_password: str):
     except requests.RequestException:
         return None
 
-
-# ============================================================
-# CHAT
-# ============================================================
 
 def send_message(token: str, message: str, thread_id: str):
     """
@@ -207,9 +178,6 @@ def send_message(token: str, message: str, thread_id: str):
         return None
 
 
-# ============================================================
-# THREADS
-# ============================================================
 
 def create_thread(token: str):
     """
@@ -265,10 +233,6 @@ def get_thread_details(token: str, thread_id: str):
         return None
 
 
-# ============================================================
-# YOUTUBE
-# ============================================================
-
 def set_youtube(token: str, thread_id: str, youtube_url: str):
     """
     Load a YouTube video into a thread.
@@ -309,9 +273,7 @@ def get_youtube(token: str, thread_id: str):
         return None
 
 
-# ============================================================
-# PDF
-# ============================================================
+#pdf
 
 def upload_pdf(token: str, thread_id: str, uploaded_file):
     """
@@ -372,7 +334,6 @@ def get_pdf(thread_id: str, doc_id: str):
     except requests.RequestException:
         return None
 
-
 def get_thread_pdfs(thread_id: str):
     try:
         response = requests.get(
@@ -383,10 +344,11 @@ def get_thread_pdfs(thread_id: str):
 
         return response
 
-    except requests.RequestException:
+    except requests.RequestException as e:
+        print(f"[PDF API] Request failed: {repr(e)}")
         return None
 
-
+    
 def get_thread_documents(token: str, thread_id: str):
     """
     Get documents associated with a thread.
@@ -427,9 +389,7 @@ def get_thread_sources(token: str, thread_id: str):
         return None
 
 
-# ============================================================
-# TITLE
-# ============================================================
+# Title
 
 def generate_title(
     token: str,
