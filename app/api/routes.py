@@ -181,139 +181,134 @@ def generate_title(data: dict):
     return {"title": title}
 
 
-@router.post("/set_youtube")  # done
-def set_youtube(
-    data: dict,
-    current_user: dict = Depends(get_current_user)
-):
-    user_id = current_user["user_id"]
+# upload url
 
-    thread_id = data["thread_id"]
-    youtube_url = data["youtube_url"]
+@router.post("/upload-url")
+async def upload_url(url:str=Form(...),
+                     thread_id:str=Form(...),
+                     current_user: dict = Depends(get_current_user)
+                     ):
+    user_id=current_user["user_id"]
+    cursor=conn.cursor()
 
-    cursor = conn.cursor()
-
-    cursor.execute(
-        """
-        SELECT thread_id
-        FROM threads
-        WHERE thread_id = ?
-          AND user_id = ?
-        """,
-        (thread_id, user_id)
-    )
-
-    thread = cursor.fetchone()
-
+    # verify the user first 
+    cursor.execute("""
+SELECT thread_id
+FROM threads
+WHERE thread_id=?
+AND user_id=?
+""",
+(thread_id,user_id))
+    thread=cursor.fetchone()
     if thread is None:
         raise HTTPException(
             status_code=404,
             detail="Thread not found"
         )
-
-
-    from app.utils.hash_utils import hash_string
-
-    video_id = extract_video_id(youtube_url)
-
-    if not video_id:
-        raise HTTPException(
-            status_code=400,
-            detail="Invalid YouTube URL"
-        )
-
-    doc_hash = hash_string(video_id)
-
-    cursor.execute(
-        """
-        SELECT doc_id, vectorstore_path
-        FROM documents
-        WHERE content_hash = ?
-        """,
-        (doc_hash,)
-    )
-
-    row = cursor.fetchone()
-
-    if row:
-
-        doc_id = row[0]
-
-
-        cursor.execute(
-            """
-            INSERT  INTO thread_documents (
-                thread_id,
-                doc_id
-            )
-            VALUES (?, ?)
-            """,
-            (thread_id, doc_id)
-        )
-
-        conn.commit()
-
-        clear_thread_retriever_cache(thread_id)
-
-        return {
-            "status": "reused",
-            "doc_id": doc_id
-        }
-
-    # New YouTube document
-
+    from app.core.web_processor import ingest_web
     doc_id = str(uuid.uuid4())
 
-    vectorstore_path = ingest_youtube(
-        video_id,
-        doc_id
+    web_info=ingest_web(url=url,
+                        doc_id=doc_id,
+                        thread_id=thread_id)
+
+    cursor.execute("""
+INSERT into documents (
+doc_id,
+user_id,
+type,
+content_hash,
+source,
+vectorstore_path,
+filename
     )
+    VALUES (?,?,?,?,?,?,?)
+""",
+(doc_id,
+ user_id,
+ web_info["type"],
+ web_info["content_hash"],
+ web_info["source"],
+ web_info["vectorstore_path"],
+ web_info["title"]
+ )
+)
 
-    # Save document with OWNER
-
-    cursor.execute(
-        """
-        INSERT INTO documents (
-            doc_id,
-            user_id,
-            type,
-            content_hash,
-            source,
-            vectorstore_path
-        )
-        VALUES (?, ?, ?, ?, ?, ?)
-        """,
-        (
-            doc_id,
-            user_id,
-            "youtube",
-            doc_hash,
-            video_id,
-            vectorstore_path
-        )
-    )
-
-    # Link document to thread
-
-    cursor.execute(
-        """
-        INSERT INTO thread_documents (
-            thread_id,
-            doc_id
-        )
-        VALUES (?, ?)
-        """,
-        (thread_id, doc_id)
-    )
-
+    cursor.execute("""
+INSERT INTO thread_documents
+(
+thread_id,
+doc_id
+)  
+VALUES (? , ?)
+""",
+(thread_id,doc_id)
+)
+    
     conn.commit()
+    clear_thread_retriever_cache(thread_id=thread_id)
 
-    clear_thread_retriever_cache(thread_id)
+    return {"status":"new",
+            "doc_id":doc_id,
+            "title":web_info["title"]
+            }
 
-    return {
-        "status": "ok",
-        "doc_id": doc_id
-    }
+
+
+
+# get url
+
+@router.get("get_url/{thread_id}/{doc_id}")
+def get_url(thread_id:str,
+            doc_id:str,
+            current_user:dict=Depends(get_current_user)):
+    user_id=current_user["user_id"]
+    cursor=conn.cursor()
+    # verify user belong to that therad
+
+    cursor.execute("""
+SELECT thread_id,
+doc_id,
+WHERE thread_id=?,
+doc_id=?
+""",
+(thread_id,doc_id)
+)
+    if cursor.fetchall() is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Thread not found"
+        )
+
+    cursor.execute("""
+SELECT d.source
+from documents as d
+WHERE d.type="web"
+AND d.user_id=?
+AND d.doc_id=?
+AND d.thread_id=?
+""",(user_id,doc_id,thread_id)
+)
+    row=cursor.fetchall()
+
+    if row is None:
+        raise HTTPException(
+            status_code=404,
+            detail="URL not found for this Thread"
+        )
+
+    url_source=row[0]
+    if url_source is None:
+        raise HTTPException(
+            status_code=404,
+            detail="URL Not found for this thread"
+        )
+
+    return {"url":url_source}
+
+    
+
+    
 
 
 
@@ -768,6 +763,7 @@ def get_thread_sources(
     return thread_document_metadata(thread_id)
 
 
+
 # get pdf 
 
 
@@ -912,6 +908,146 @@ def get_thread_pdfs(
         "count": len(pdfs),
         "pdfs": pdfs
     }
+
+
+
+# set youtube
+
+
+@router.post("/set_youtube")  # done
+def set_youtube(
+    data: dict,
+    current_user: dict = Depends(get_current_user)
+):
+    user_id = current_user["user_id"]
+
+    thread_id = data["thread_id"]
+    youtube_url = data["youtube_url"]
+
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        SELECT thread_id
+        FROM threads
+        WHERE thread_id = ?
+          AND user_id = ?
+        """,
+        (thread_id, user_id)
+    )
+
+    thread = cursor.fetchone()
+
+    if thread is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Thread not found"
+        )
+
+
+    from app.utils.hash_utils import hash_string
+
+    video_id = extract_video_id(youtube_url)
+
+    if not video_id:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid YouTube URL"
+        )
+
+    doc_hash = hash_string(video_id)
+
+    cursor.execute(
+        """
+        SELECT doc_id, vectorstore_path
+        FROM documents
+        WHERE content_hash = ?
+        """,
+        (doc_hash,)
+    )
+
+    row = cursor.fetchone()
+
+    if row:
+
+        doc_id = row[0]
+
+
+        cursor.execute(
+            """
+            INSERT  INTO thread_documents (
+                thread_id,
+                doc_id
+            )
+            VALUES (?, ?)
+            """,
+            (thread_id, doc_id)
+        )
+
+        conn.commit()
+
+        clear_thread_retriever_cache(thread_id)
+
+        return {
+            "status": "reused",
+            "doc_id": doc_id
+        }
+
+    # New YouTube document
+
+    doc_id = str(uuid.uuid4())
+
+    vectorstore_path = ingest_youtube(
+        video_id,
+        doc_id
+    )
+
+    # Save document with OWNER
+
+    cursor.execute(
+        """
+        INSERT INTO documents (
+            doc_id,
+            user_id,
+            type,
+            content_hash,
+            source,
+            vectorstore_path
+        )
+        VALUES (?, ?, ?, ?, ?, ?)
+        """,
+        (
+            doc_id,
+            user_id,
+            "youtube",
+            doc_hash,
+            video_id,
+            vectorstore_path
+        )
+    )
+
+    # Link document to thread
+
+    cursor.execute(
+        """
+        INSERT INTO thread_documents (
+            thread_id,
+            doc_id
+        )
+        VALUES (?, ?)
+        """,
+        (thread_id, doc_id)
+    )
+
+    conn.commit()
+
+    clear_thread_retriever_cache(thread_id)
+
+    return {
+        "status": "ok",
+        "doc_id": doc_id
+    }
+
 
 
 # get youtube

@@ -1674,3 +1674,94 @@
 2026-09-10 16:30:38,240 | INFO | req:N/A | app.llm.llm_config | LLM request succeeded using Gemini
 2026-09-10 16:30:38,247 | INFO | req:N/A | app.graph.agent_graph | [MEMORY] Current message count: 9
 2026-09-10 16:30:38,252 | INFO | req:N/A | app.graph.agent_graph | [MEMORY] Conversation size OK -> END
+2026-09-11 01:10:57,766 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-09-11 01:10:59,601 | INFO | req:N/A | app.memory.sqlite_memory | SQLite memory initialized | db=database\chatbot_conv.db
+2026-09-11 01:11:01,551 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-09-11 01:11:01,554 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-09-11 01:11:01,558 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-09-11 02:53:31,893 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-09-11 02:57:39,002 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-09-11 03:01:03,117 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-09-11 03:02:45,521 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-09-11 03:08:45,729 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-09-11 03:10:41,606 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-09-11 03:15:29,214 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-09-11 03:15:35,916 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-09-11 03:25:57,054 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-09-11 03:26:01,977 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-09-11 03:28:40,248 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-09-11 03:28:45,663 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-09-11 03:31:25,583 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-09-11 03:31:29,948 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-09-11 03:40:24,425 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-09-11 03:40:28,393 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-09-11 03:54:45,879 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-09-11 03:54:50,810 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-09-11 07:45:56,317 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-09-11 07:46:00,857 | INFO | req:N/A | app.memory.sqlite_memory | SQLite memory initialized | db=database\chatbot_conv.db
+2026-09-11 07:46:03,171 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-09-11 07:46:03,172 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-09-11 07:46:03,174 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-09-11 07:48:26,574 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-09-11 07:48:28,924 | INFO | req:N/A | app.memory.sqlite_memory | SQLite memory initialized | db=database\chatbot_conv.db
+2026-09-11 07:48:30,749 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-09-11 07:48:30,750 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-09-11 07:48:30,751 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-09-11 07:48:40,591 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-09-11 07:48:42,218 | INFO | req:N/A | app.memory.sqlite_memory | SQLite memory initialized | db=database\chatbot_conv.db
+2026-09-11 07:48:43,981 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-09-11 07:48:43,982 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-09-11 07:48:43,982 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-09-11 08:06:12,700 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-09-11 08:06:56,376 | INFO | req:N/A | app.llm.llm_config | Trying LLM provider: Gemini
+2026-09-11 08:06:58,105 | INFO | req:N/A | app.llm.llm_config | Initialized LLM provider: Gemini
+2026-09-11 08:06:58,105 | INFO | req:N/A | app.llm.llm_config | Binding tools to Gemini
+2026-09-11 08:07:01,018 | INFO | req:N/A | app.llm.llm_config | LLM request succeeded using Gemini
+2026-09-11 08:07:01,082 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-09-11 08:07:04,837 | INFO | req:N/A | app.llm.llm_config | Trying LLM provider: Gemini
+2026-09-11 08:07:06,478 | INFO | req:N/A | app.llm.llm_config | Initialized LLM provider: Gemini
+2026-09-11 11:10:10,422 | ERROR | req:N/A | app.llm.llm_config | Gemini failed during LLM invocation: ReadError: [WinError 10053] An established connection was aborted by the software in your host machine
+2026-09-11 11:10:10,497 | WARNING | req:N/A | app.llm.llm_config | Falling back from Gemini...
+2026-09-11 11:10:10,640 | INFO | req:N/A | app.llm.llm_config | Trying LLM provider: Ollama
+2026-09-11 11:10:15,235 | INFO | req:N/A | app.llm.llm_config | Initialized LLM provider: Ollama
+2026-09-11 11:12:23,187 | INFO | req:N/A | app.llm.llm_config | LLM request succeeded using Ollama
+2026-09-11 11:12:24,555 | INFO | req:N/A | app.graph.agent_graph | [MEMORY] Current message count: 4
+2026-09-11 11:12:24,565 | INFO | req:N/A | app.graph.agent_graph | [MEMORY] Conversation size OK -> END
+2026-09-11 11:12:25,213 | INFO | req:N/A | app.llm.llm_config | Trying LLM provider: Gemini
+2026-09-11 11:12:33,167 | INFO | req:N/A | app.llm.llm_config | Initialized LLM provider: Gemini
+2026-09-11 11:12:37,920 | INFO | req:N/A | app.llm.llm_config | LLM request succeeded using Gemini
+2026-09-15 12:50:41,020 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-09-15 12:50:50,318 | INFO | req:N/A | app.memory.sqlite_memory | SQLite memory initialized | db=database\chatbot_conv.db
+2026-09-15 12:50:58,084 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-09-15 12:50:58,094 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-09-15 12:50:58,095 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-09-15 12:51:48,031 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-09-15 12:51:56,927 | INFO | req:N/A | app.memory.sqlite_memory | SQLite memory initialized | db=database\chatbot_conv.db
+2026-09-15 12:51:59,852 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-09-15 12:51:59,853 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-09-15 12:51:59,854 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-09-15 12:53:07,353 | INFO | req:N/A | app.llm.llm_config | Trying LLM provider: Gemini
+2026-09-15 12:53:11,644 | INFO | req:N/A | app.llm.llm_config | Initialized LLM provider: Gemini
+2026-09-15 12:53:11,645 | INFO | req:N/A | app.llm.llm_config | Binding tools to Gemini
+2026-09-15 12:53:13,164 | INFO | req:N/A | app.llm.llm_config | LLM request succeeded using Gemini
+2026-09-15 12:53:13,348 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-09-15 12:53:19,873 | INFO | req:N/A | app.llm.llm_config | Trying LLM provider: Gemini
+2026-09-15 12:53:24,515 | INFO | req:N/A | app.llm.llm_config | Initialized LLM provider: Gemini
+2026-09-15 12:53:25,938 | INFO | req:N/A | app.llm.llm_config | LLM request succeeded using Gemini
+2026-09-15 12:53:26,018 | INFO | req:N/A | app.graph.agent_graph | [MEMORY] Current message count: 4
+2026-09-15 12:53:26,103 | INFO | req:N/A | app.graph.agent_graph | [MEMORY] Conversation size OK -> END
+2026-09-15 12:53:28,338 | INFO | req:N/A | app.llm.llm_config | Trying LLM provider: Gemini
+2026-09-15 12:53:31,595 | INFO | req:N/A | app.llm.llm_config | Initialized LLM provider: Gemini
+2026-09-15 12:53:34,100 | INFO | req:N/A | app.llm.llm_config | LLM request succeeded using Gemini
+2026-09-15 12:54:57,886 | INFO | req:N/A | app.llm.llm_config | Trying LLM provider: Gemini
+2026-09-15 12:55:02,479 | INFO | req:N/A | app.llm.llm_config | Initialized LLM provider: Gemini
+2026-09-15 12:55:02,480 | INFO | req:N/A | app.llm.llm_config | Binding tools to Gemini
+2026-09-15 12:55:04,240 | INFO | req:N/A | app.llm.llm_config | LLM request succeeded using Gemini
+2026-09-15 12:55:04,247 | INFO | req:N/A | app.graph.agent_graph | [MEMORY] Current message count: 6
+2026-09-15 12:55:04,255 | INFO | req:N/A | app.graph.agent_graph | [MEMORY] Conversation size OK -> END
+2026-09-15 12:58:26,536 | INFO | req:N/A | app.llm.llm_config | Trying LLM provider: Gemini
+2026-09-15 12:58:30,962 | INFO | req:N/A | app.llm.llm_config | Initialized LLM provider: Gemini
+2026-09-15 12:58:30,963 | INFO | req:N/A | app.llm.llm_config | Binding tools to Gemini
+2026-09-15 12:58:33,117 | INFO | req:N/A | app.llm.llm_config | LLM request succeeded using Gemini
+2026-09-15 12:58:33,159 | INFO | req:N/A | app.graph.agent_graph | [MEMORY] Current message count: 8
+2026-09-15 12:58:33,361 | INFO | req:N/A | app.graph.agent_graph | [MEMORY] Conversation size OK -> END

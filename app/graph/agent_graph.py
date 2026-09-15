@@ -7,9 +7,9 @@ from langgraph.prebuilt import tools_condition
 from app.graph.state import ChatState
 
 from app.graph.nodes import (
-    chat_node,
-    tool_node,
+    chat_node
 )
+from app.graph.tool_node import tool_node
 from app.graph.fin_ans import final_answer_node
 
 from langchain_core.messages import ToolMessage

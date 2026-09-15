@@ -28,6 +28,9 @@ API_UPLOAD_PDF = f"{API_BASE_URL}/upload-pdf"
 API_THREAD_PDFS = f"{API_BASE_URL}/thread/{{}}/pdfs"
 API_GET_PDF = f"{API_BASE_URL}/get_pdf/{{}}/{{}}"
 
+API_UPLOAD_URL=f"{API_BASE_URL}/upload-url"
+API_GET_URL=f"{API_BASE_URL}/get_url/{{}}/{{}}"
+
 API_SET_YOUTUBE = f"{API_BASE_URL}/set_youtube"
 API_GET_YOUTUBE = f"{API_BASE_URL}/get_youtube/{{thread_id}}"
 
@@ -415,5 +418,53 @@ def generate_title(
 
         return response
 
+    except requests.RequestException:
+        return None
+
+
+
+# set url
+
+def upload_url(token, thread_id, url):
+    """
+    Upload a website URL to the current thread.
+    The backend extracts the website content and
+    creates a vectorstore for RAG.
+    """
+
+    try:
+
+        data = {
+            "thread_id": thread_id,
+            "url": url
+        }
+
+        response = requests.post(
+            API_UPLOAD_URL,
+            data=data,
+            headers=auth_headers(token=token),
+            timeout=300
+        )
+
+        return response
+
+    except requests.RequestException:
+        return None
+
+# get url
+
+def get_url(token,thread_id,doc_id):
+    "Get Url specifc to that thread"
+    try:
+
+        responce=requests.get(
+            API_GET_URL,
+            thread_id,
+            doc_id,
+            headers=auth_headers(token=token),
+            timeout=300
+        )
+
+        return responce
     except requests.RequestException:
         return None

@@ -1,19 +1,42 @@
-import sqlite3
-import os
-DB_DIR = "database"
-DB_PATH = os.path.join(DB_DIR, "chatbot_conv.db")
+from app.services.web_loader import load_webpage
+from app.core.web_processor import ingest_web
 
-os.makedirs(DB_DIR, exist_ok=True)
 
-conn = sqlite3.connect(DB_PATH, check_same_thread=False)
-cursor=conn.cursor()
-data=cursor.execute("""
-ALTER TABLE documents ADD COLUMN filename TEXT DEFAULT NULL;
-""")
+url = "https://en.wikipedia.org/wiki/Retrieval-augmented_generation"
 
-for d in data:
-    print(d)
 
-conn.commit()
+try:
 
-conn.close()
+    document = ingest_web(url,"123")
+
+    print("\n" + "=" * 80)
+    print("WEB LOADER TEST RESULT")
+    print("=" * 80)
+
+    print("\nTITLE:")
+    print(document['title'])
+
+    print("\nSOURCE:")
+    print(document["source"])
+
+    print("\nTYPE:")
+    print(document["type"])
+
+    print("\n Vectorstore:")
+    print(document["vectorstore_path"])
+
+    print("\nDoc id :")
+    print(document["doc_id"])
+    print("\nContent Hash:")
+    print(document["content_hash"])
+
+    print("\nCONTENT LENGTH:")
+    print(len(document["content"]))
+
+    print("\nFIRST al CHARACTERS:")
+    print(document["content"])
+
+except Exception as e:
+
+    print("\nERROR:")
+    print(str(e))

@@ -17,6 +17,8 @@ from api_client import (
     set_youtube,
     get_youtube,
     upload_pdf,
+    get_url,
+    upload_url,
     generate_title,
     get_pdf,
 )
@@ -444,6 +446,87 @@ def render_sidebar():
                     detail = "Failed to load video."
 
                 st.sidebar.error(detail)
+
+
+    ## upload URL Box
+
+    # ============================================================
+# WEBSITE URL
+# ============================================================
+
+    st.sidebar.divider()
+
+    st.sidebar.subheader(
+      "🌐 Website / Article"
+    )
+
+    website_url = st.sidebar.text_input(
+      "Paste Website URL",
+       placeholder="https://example.com/article",
+       key="website_url_input"
+    )
+
+
+    if st.sidebar.button(
+    "📥 Load Website",
+    use_container_width=True
+    ):
+
+      if not website_url:
+  
+          st.sidebar.warning(
+              "Please enter a website URL."
+          )
+
+      else:
+
+        with st.sidebar.spinner(
+            "Extracting website content..."
+        ):
+
+            response = upload_url(
+                token=token,
+                thread_id=thread_id,
+                url=website_url
+            )
+
+        if response is None:
+
+            st.sidebar.error(
+                "Unable to connect to backend."
+            )
+
+        elif response.status_code == 200:
+
+            data = response.json()
+
+            st.sidebar.success(
+                "✅ Website loaded successfully!"
+            )
+
+            st.sidebar.caption(
+                f"Document ID: {data.get('doc_id', '')[:8]}"
+            )
+
+        elif response.status_code == 401:
+
+            logout()
+
+        else:
+
+            try:
+
+                detail = response.json().get(
+                    "detail",
+                    "Failed to load website."
+                )
+
+            except Exception:
+
+                detail = "Failed to load website."
+
+            st.sidebar.error(detail)
+
 
     # PAST CONVERSATIONS
 

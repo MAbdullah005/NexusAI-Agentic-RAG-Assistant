@@ -15,21 +15,15 @@ from langchain_core.messages import (
 )
 
 from app.graph.state import ChatState
-from app.llm.llm_config import llm
 
-from app.tools.python_executor import python_executor
-from app.tools.calculator_tool import calculator
 from app.prompts.chat import CHAT_SYSTEM_PROMPT
-from app.tools.unified_rag_tool import unified_rag_tool
-from app.tools.search_tool import search_tool
-from app.tools.stock_tool import get_stock_price
-from langchain_core.messages.utils import trim_messages,count_tokens_approximately
+
+from app.graph.tool_node import llm_with_tools
 
 from app.core.retriever import thread_document_metadata
 from app.memory.sqlite_memory import checkpointer
 from app.utils.logger import logger
 
-from langgraph.prebuilt import ToolNode
 
 MAX_TOKEN=500
 
@@ -109,6 +103,9 @@ def chat_node(state: ChatState, config=None):
         system_message,
         *messages1
     ]
+    print("\n"+"="*80)
+    print("Here is all messages we give to tool llm msgs to generate naswer ",messages)
+    print("\n"+"="*80)
 
     print(
         "[CHAT NODE] Calling LLM with tools."
@@ -133,17 +130,5 @@ def chat_node(state: ChatState, config=None):
     }
 
 
-tools = [
-    search_tool,
-    get_stock_price,
-    calculator,
-    unified_rag_tool,
-    python_executor,
-]
 
 
-
-llm_with_tools = llm.bind_tools(tools)
-
-
-tool_node = ToolNode(tools)

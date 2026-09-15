@@ -65,6 +65,7 @@ def init_db():
     type TEXT,
     content_hash TEXT NOT NULL,
     source TEXT,
+    filename TEXT,
     vectorstore_path TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
