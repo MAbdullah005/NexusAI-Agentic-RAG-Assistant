@@ -20,6 +20,7 @@ from api_client import (
     get_url,
     upload_url,
     generate_title,
+    resume_chat,
     get_pdf,
 )
 from auth_ui import logout
@@ -53,6 +54,9 @@ def initialize_chat_state():
     if "selected_thread" not in st.session_state:
         st.session_state["selected_thread"] = None
 
+    if "pending_hitl" not in st.session_state:
+        st.session_state["pending_hitl"] = None
+
 
 # CREATE INITIAL THREAD
 
@@ -64,6 +68,7 @@ def ensure_thread():
     token = st.session_state["access_token"]
 
     response = create_thread(token)
+    st.session_state.pop("pending_hitl", None)
 
     if response is None:
         st.error("Unable to connect to backend.")
@@ -91,6 +96,7 @@ def reset_thread_state():
     st.session_state["youtube_loaded_for"] = None
     st.session_state["sources"] = {}
     st.session_state["uploaded_file_name"] = None
+    st.session_state["pending_hitl"]= None
 
 
 # CREATE NEW CHAT
@@ -151,6 +157,7 @@ def load_thread(thread_id):
             f"{response.text}"
         )
         return
+    st.session_state.pop("pending_hitl", None)
 
     details = response.json()
 
@@ -237,35 +244,76 @@ def call_chat_api(user_input, thread_id):
         thread_id
     )
 
+    # --------------------------------------------------------
+    # Connection error
+    # --------------------------------------------------------
+
     if response is None:
-        return "❌ Unable to connect to backend."
+        return {
+            "status": "error",
+            "message": "❌ Unable to connect to backend."
+        }
+
+    # --------------------------------------------------------
+    # Authentication
+    # --------------------------------------------------------
 
     if response.status_code == 401:
         logout()
-        return "❌ Session expired. Please login again."
 
-    if response.status_code != 200:
+        return {
+            "status": "error",
+            "message": "❌ Session expired. Please login again."
+        }
 
-        try:
-            detail = response.json().get(
-                "detail",
-                "Unknown API error"
-            )
-        except Exception:
-            detail = response.text
-
-        return f"❌ API Error: {detail}"
+    # --------------------------------------------------------
+    # Parse JSON
+    # --------------------------------------------------------
 
     try:
-
-        return response.json().get(
-            "response",
-            "⚠️ No response"
-        )
+        data = response.json()
 
     except Exception:
 
-        return "⚠️ Invalid response from server."
+        return {
+            "status": "error",
+            "message": "⚠️ Invalid response from server."
+        }
+
+    # --------------------------------------------------------
+    # API ERROR
+    # --------------------------------------------------------
+
+    if response.status_code != 200:
+
+        return {
+            "status": "error",
+            "message": data.get(
+                "detail",
+                "Unknown API error"
+            )
+        }
+
+    # --------------------------------------------------------
+    # IMPORTANT:
+    # Return HITL response directly
+    # --------------------------------------------------------
+
+    if data.get("status") == "human-approval":
+
+        return data
+
+    # --------------------------------------------------------
+    # Normal completed response
+    # --------------------------------------------------------
+
+    return data
+
+
+
+
+
+# render Hitl 
 
 
 # SIDEBAR
@@ -591,16 +639,16 @@ def render_chat():
 
     st.subheader("💬 Chat")
 
-    # CHAT HISTORY CONTAINER
+    # ============================================================
+    # CHAT HISTORY
+    # ============================================================
 
     with st.container(
         height=800,
         border=True
     ):
 
-        for message in st.session_state[
-            "message_history"
-        ]:
+        for message in st.session_state["message_history"]:
 
             with st.chat_message(
                 message["role"]
@@ -610,13 +658,21 @@ def render_chat():
                     message["content"]
                 )
 
+    # ============================================================
     # CHAT INPUT
+    # ============================================================
 
     user_input = st.chat_input(
         "Ask something..."
     )
 
     if user_input:
+
+        # New question = clear old HITL state
+        st.session_state.pop(
+            "pending_hitl",
+            None
+        )
 
         st.session_state[
             "message_history"
@@ -638,21 +694,36 @@ def render_chat():
 
         st.rerun()
 
-    # PROCESS PENDING MESSAGE
+    # ============================================================
+    # PROCESS CHAT RESPONSE
+    # ============================================================
 
-    if st.session_state["message_history"]:
+    if st.session_state.get("message_history"):
 
         last_message = (
-            st.session_state[
-                "message_history"
-            ][-1]
+            st.session_state["message_history"][-1]
         )
+
+        # Only process a real pending chat request.
+        # Do not call /chat again while HITL is waiting.
 
         if (
             last_message["role"] == "assistant"
             and
             last_message["content"] == "⏳ Thinking..."
+            and
+            not st.session_state.get("pending_hitl")
         ):
+
+            if len(
+                st.session_state["message_history"]
+            ) < 2:
+
+                return
+
+            # ====================================================
+            # USER QUESTION
+            # ====================================================
 
             user_message = (
                 st.session_state[
@@ -660,40 +731,192 @@ def render_chat():
                 ][-2]["content"]
             )
 
-            ai_message = call_chat_api(
+            # ====================================================
+            # CALL BACKEND
+            # ====================================================
+
+            result = call_chat_api(
                 user_message,
                 thread_id
             )
 
-            st.session_state[
-                "message_history"
-            ][-1]["content"] = ai_message
+            print("\n" + "=" * 80)
+            print("[FRONTEND] CHAT API RESULT")
+            print("=" * 80)
+            print(result)
 
-            # GENERATE TITLE AFTER FIRST MESSAGE
+            # ====================================================
+            # ERROR
+            # ====================================================
 
-            if len(
+            if result.get("status") == "error":
+
                 st.session_state[
                     "message_history"
-                ]
-            ) == 2:
+                ][-1]["content"] = result.get(
+                    "message",
+                    "❌ Unknown error"
+                )
 
-                user = st.session_state["user"]
+                st.rerun()
 
-                try:
+            # ====================================================
+            # HITL
+            # ====================================================
 
-                    generate_title(
-                        st.session_state[
-                            "access_token"
-                        ],
-                        thread_id,
-                        user["user_id"],
-                        user_message
+            elif result.get("status") == "human-approval":
+
+                print(
+                    "[FRONTEND] HITL approval required"
+                )
+
+                st.session_state[
+                    "pending_hitl"
+                ] = result
+
+                st.session_state[
+                    "message_history"
+                ][-1]["content"] = (
+                    "⏸️ Waiting for your approval..."
+                )
+
+                # IMPORTANT:
+                # We do NOT call /chat again.
+                st.rerun()
+
+            # ====================================================
+            # NORMAL ANSWER
+            # ====================================================
+
+            else:
+
+                answer = result.get(
+                    "response",
+                    "⚠️ No response"
+                )
+
+                st.session_state[
+                    "message_history"
+                ][-1]["content"] = answer
+
+                # Generate title after first message
+                if len(
+                    st.session_state[
+                        "message_history"
+                    ]
+                ) == 2:
+
+                    user = st.session_state.get(
+                        "user"
                     )
 
-                except Exception:
-                    pass
+                    if user:
 
-            st.rerun()
+                        try:
+
+                            generate_title(
+                                st.session_state[
+                                    "access_token"
+                                ],
+                                thread_id,
+                                user["user_id"],
+                                user_message
+                            )
+
+                        except Exception as e:
+
+                            print(
+                                f"[TITLE] Error: {e}"
+                            )
+
+                st.rerun()
+
+    # ============================================================
+    # HITL UI
+    # ============================================================
+
+    if st.session_state.get("pending_hitl"):
+
+        hitl_data = (
+            st.session_state["pending_hitl"]
+        )
+
+        print("\n" + "=" * 80)
+        print("[FRONTEND] RENDERING HITL")
+        print("=" * 80)
+
+        print(
+            f"[FRONTEND] HITL data: {hitl_data}"
+        )
+
+        interrupt_data = hitl_data.get(
+            "interrupt",
+            {}
+        )
+
+        message = interrupt_data.get(
+            "message",
+            "I couldn't find enough information to answer your question from your uploaded documents."
+        )
+
+        question = interrupt_data.get(
+            "question",
+            ""
+        )
+
+        st.warning(message)
+
+        if question:
+
+            st.write(
+                f"**Question:** {question}"
+            )
+
+        st.write(
+            "Would you like me to search the web?"
+        )
+
+        col1, col2 = st.columns(2)
+
+        # ========================================================
+        # YES
+        # ========================================================
+
+        with col1:
+
+            if st.button(
+                "Yes, Search Web",
+                key=f"hitl_yes_{thread_id}"
+            ):
+
+                print(
+                    "[FRONTEND] YES BUTTON CLICKED"
+                )
+
+                process_hitl_resume(
+                    thread_id,
+                    "yes"
+                )
+
+        # ========================================================
+        # NO
+        # ========================================================
+
+        with col2:
+
+            if st.button(
+                "No",
+                key=f"hitl_no_{thread_id}"
+            ):
+
+                print(
+                    "[FRONTEND] NO BUTTON CLICKED"
+                )
+
+                process_hitl_resume(
+                    thread_id,
+                    "no"
+                )
 
 # VIDEO + PDF
 
@@ -1105,4 +1328,150 @@ def render_chat_ui():
     with col_video:
 
         render_media()
-        
+
+
+
+# .........
+
+def process_hitl_resume(thread_id, decision):
+
+    print("\n" + "=" * 80)
+    print("[HITL RESUME]")
+    print("=" * 80)
+    print(f"[HITL RESUME] Thread: {thread_id}")
+    print(f"[HITL RESUME] Decision: {decision}")
+
+    response = resume_chat(
+        thread_id=thread_id,
+        decision=decision
+    )
+
+    if response is None:
+
+        st.error(
+            "❌ Unable to connect to backend."
+        )
+
+        return
+
+    if response.status_code == 401:
+
+        logout()
+        return
+
+    if response.status_code != 200:
+
+        try:
+
+            detail = response.json().get(
+                "detail",
+                "Unknown error"
+            )
+
+        except Exception:
+
+            detail = response.text
+
+        st.error(
+            f"❌ Resume error: {detail}"
+        )
+
+        return
+
+    try:
+
+        data = response.json()
+
+    except Exception:
+
+        st.error(
+            "⚠️ Invalid response from server."
+        )
+
+        return
+
+    print(
+        f"[HITL RESUME] Backend response: {data}"
+    )
+
+    graph_result = data.get(
+        "result",
+        {}
+    )
+
+    if not isinstance(graph_result, dict):
+
+        st.error(
+            "⚠️ Invalid graph response."
+        )
+
+        return
+
+    # --------------------------------------------------------
+    # Get final graph messages
+    # --------------------------------------------------------
+
+    messages = graph_result.get(
+        "messages",
+        []
+    )
+
+    answer = None
+
+    if messages:
+
+        final_message = messages[-1]
+
+        if hasattr(
+            final_message,
+            "content"
+        ):
+
+            answer = final_message.content
+
+        elif isinstance(
+            final_message,
+            dict
+        ):
+
+            answer = final_message.get(
+                "content"
+            )
+
+        else:
+
+            answer = str(final_message)
+
+    if not answer:
+
+        answer = "⚠️ No response generated."
+
+    # --------------------------------------------------------
+    # Clear HITL state
+    # --------------------------------------------------------
+
+    st.session_state.pop(
+        "pending_hitl",
+        None
+    )
+
+    # --------------------------------------------------------
+    # Put final answer in assistant message
+    # --------------------------------------------------------
+
+    if st.session_state.get(
+        "message_history"
+    ):
+
+        st.session_state[
+            "message_history"
+        ][-1]["content"] = answer
+
+    print(
+        "[HITL RESUME] Final answer stored."
+    )
+
+    st.rerun()
+# ============================================================
+# HITL UI
+# ============================================================

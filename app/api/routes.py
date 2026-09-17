@@ -9,12 +9,14 @@ import sqlite3
 from fastapi import UploadFile, File, Form
 from fastapi.responses import FileResponse
 from langchain_core.messages import HumanMessage
+from langgraph.types import Command
 from app.services.youtube_ingest import ingest_youtube
 from app.auth.dependencies import get_current_user
 
 from app.utils.logger import get_logger
 from app.core.retriever import thread_document_metadata
 from app.graph.agent_graph import chatbot
+from app.schemas.resume_chat import HITLResumeRequest
 from app.services.pdf_ingest import ingest_pdf
 from app.utils.common import extract_ai_text
 from app.memory.sqlite_memory import  get_thread_title_db, save_thread_title
@@ -34,16 +36,20 @@ checkpointer = SqliteSaver(conn=conn)
 
 
 #  Chat Endpoint 
-
-@router.post("/chat") # done
+@router.post("/chat")
 async def chat_endpoint(
     data: dict,
     current_user: dict = Depends(get_current_user)
 ):
+
     user_id = current_user["user_id"]
+
     user_input = data["message"]
     thread_id = data["thread_id"]
 
+    # ========================================================
+    # VERIFY THREAD OWNERSHIP
+    # ========================================================
 
     cursor = conn.cursor()
 
@@ -54,18 +60,24 @@ async def chat_endpoint(
         WHERE thread_id = ?
           AND user_id = ?
         """,
-        (thread_id, user_id)
+        (
+            thread_id,
+            user_id
+        )
     )
 
     thread = cursor.fetchone()
 
     if thread is None:
+
         raise HTTPException(
             status_code=404,
             detail="Thread not found"
         )
 
-    # LangGraph configuration
+    # ========================================================
+    # LANGGRAPH CONFIG
+    # ========================================================
 
     CONFIG = {
         "configurable": {
@@ -74,26 +86,107 @@ async def chat_endpoint(
         "run_name": "chat_turn",
     }
 
-    # Run chatbot
+    # ========================================================
+    # RUN GRAPH
+    # ========================================================
 
     response = chatbot.invoke(
         {
             "messages": [
-                HumanMessage(content=user_input)
+                HumanMessage(
+                    content=user_input
+                )
             ]
         },
         config=CONFIG,
     )
 
+    print("\n" + "=" * 80)
+    print("[CHAT API]")
+    print("=" * 80)
+
+    print(
+        f"[CHAT API] Graph response type: "
+        f"{type(response)}"
+    )
+
+    print(
+        f"[CHAT API] Response keys: "
+        f"{response.keys() if isinstance(response, dict) else 'N/A'}"
+    )
+
+    # ========================================================
+    # CHECK LANGGRAPH INTERRUPT
+    # ========================================================
+
+    if isinstance(response, dict) and "__interrupt__" in response:
+
+        interrupts = response["__interrupt__"]
+
+        print(
+            "[CHAT API] Graph interrupted → HITL"
+        )
+
+        print(
+            f"[CHAT API] Interrupt data: {interrupts}"
+        )
+
+        interrupt_data = {}
+
+        if interrupts:
+
+            first_interrupt = interrupts[0]
+
+            # LangGraph Interrupt object
+            if hasattr(
+                first_interrupt,
+                "value"
+            ):
+
+                interrupt_data = (
+                    first_interrupt.value
+                )
+
+            elif isinstance(
+                first_interrupt,
+                dict
+            ):
+
+                interrupt_data = (
+                    first_interrupt
+                )
+
+        return {
+            "status": "human-approval",
+            "thread_id": thread_id,
+            "interrupt": interrupt_data,
+        }
+
+    # ========================================================
+    # NORMAL COMPLETED RESPONSE
+    # ========================================================
+
+    if not response.get("messages"):
+
+        return {
+            "status": "completed",
+            "thread_id": thread_id,
+            "response": "⚠️ No response generated."
+        }
+
     ai_response = extract_ai_text(
         response["messages"][-1]
     )
 
-    return {
-        "thread_id": thread_id,
-        "response": ai_response
-    }
+    print(
+        "[CHAT API] Normal response generated"
+    )
 
+    return {
+        "status": "completed",
+        "thread_id": thread_id,
+        "response": ai_response,
+    }
 
 #  Threads 
 
@@ -1114,4 +1207,81 @@ def get_youtube(
     return {
         "thread_id": thread_id,
         "youtube_url": videos
+    }
+
+
+
+# resume chat on interput 
+@router.post("/chat/resume")
+def resume_chat(
+    request: HITLResumeRequest,
+    current_user: dict = Depends(get_current_user)
+):
+
+    thread_id = request.thread_id
+
+    user_id = current_user["user_id"]
+
+    decision = request.decision.lower().strip()
+
+    # --------------------------------------------------------
+    # Validate decision
+    # --------------------------------------------------------
+
+    if decision not in {"yes", "no"}:
+
+        raise HTTPException(
+            status_code=400,
+            detail="Decision must be 'yes' or 'no'."
+        )
+
+    # --------------------------------------------------------
+    # Verify thread ownership
+    # --------------------------------------------------------
+
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        SELECT thread_id
+        FROM threads
+        WHERE thread_id = ?
+          AND user_id = ?
+        """,
+        (
+            thread_id,
+            user_id
+        )
+    )
+
+    thread = cursor.fetchone()
+
+    if thread is None:
+
+        raise HTTPException(
+            status_code=404,
+            detail="Thread not found"
+        )
+
+    # --------------------------------------------------------
+    # IMPORTANT: RESUME THE INTERRUPTED GRAPH
+    # --------------------------------------------------------
+
+    config = {
+        "configurable": {
+            "thread_id": thread_id
+        }
+    }
+
+    result = chatbot.invoke(
+        Command(
+            resume=decision
+        ),
+        config=config
+    )
+
+    return {
+        "status": "completed",
+        "thread_id": thread_id,
+        "result": result
     }

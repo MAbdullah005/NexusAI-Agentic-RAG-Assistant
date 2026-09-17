@@ -34,6 +34,12 @@ API_GET_URL=f"{API_BASE_URL}/get_url/{{}}/{{}}"
 API_SET_YOUTUBE = f"{API_BASE_URL}/set_youtube"
 API_GET_YOUTUBE = f"{API_BASE_URL}/get_youtube/{{thread_id}}"
 
+# resume chat on interput
+
+API_CHAT_RESUME=f"{API_BASE_URL}/chat/resume"
+
+# api get details
+
 API_THREAD_DETAILS = f"{API_BASE_URL}/thread/{{thread_id}}/details"
 API_THREAD_DOCUMENTS = f"{API_BASE_URL}/thread/{{thread_id}}/documents"
 API_THREAD_SOURCES = f"{API_BASE_URL}/thread/{{thread_id}}/sources"
@@ -467,4 +473,34 @@ def get_url(token,thread_id,doc_id):
 
         return responce
     except requests.RequestException:
+        return None
+
+
+
+# resume caht fun
+
+def resume_chat(
+    thread_id: str,
+    decision: str
+):
+    try:
+
+        response = requests.post(
+            API_CHAT_RESUME,
+            json={
+                "thread_id": thread_id,
+                "decision": decision
+            },
+            headers=get_auth_headers(),
+            timeout=120
+        )
+
+        return response
+
+    except requests.RequestException as e:
+
+        print(
+            f"[HITL] Resume request failed: {repr(e)}"
+        )
+
         return None

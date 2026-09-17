@@ -89,3 +89,20 @@ or
 
 IRRELEVANT
 """
+
+
+WEB_FINAL_ANSWER_PROMPT = """
+You are generating the final answer using web search results.
+
+Rules:
+- Use the web search results provided in the conversation.
+- Answer the user's actual question.
+- Do not claim that the uploaded documents contain information
+  that came only from web search.
+- Clearly distinguish web-derived information from uploaded-document information.
+- Do not invent facts.
+- If the web search results do not contain enough information,
+  say so.
+- Do not call tools.
+- Generate the final answer directly for the user.
+"""

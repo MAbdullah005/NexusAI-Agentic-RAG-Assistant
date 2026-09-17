@@ -22,3 +22,9 @@ class ChatState(TypedDict, total=False):
     tool_call: Dict[str, Any]
 
     summary: str
+
+    rag_grade: str
+
+    hitl_decision : str
+
+    answer_source: str
