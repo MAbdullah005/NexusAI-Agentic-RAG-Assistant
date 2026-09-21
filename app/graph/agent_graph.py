@@ -422,7 +422,7 @@ graph.add_conditional_edges(
 
 graph.add_edge(
     "web_search",
-    "final_answer"
+    "memory_check"
 )
 
 graph.add_edge(

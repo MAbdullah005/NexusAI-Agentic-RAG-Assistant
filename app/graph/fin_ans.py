@@ -2,11 +2,7 @@ from __future__ import annotations
 
 from app.graph.state import ChatState
 from app.llm.llm_config import llm
-
-from app.prompts.rag import (
-    RAG_FINAL_ANSWER_PROMPT,
-    WEB_FINAL_ANSWER_PROMPT,
-)
+from app.prompts.rag import RAG_FINAL_ANSWER_PROMPT
 
 from langchain_core.messages import (
     SystemMessage,
@@ -20,14 +16,9 @@ def final_answer_node(
     config=None
 ):
 
-    source = state.get(
-        "answer_source",
-        "rag"
-    )
-
     print("\n" + "=" * 80)
     print("[FINAL ANSWER NODE]")
-    print(f"[FINAL ANSWER] Source: {source}")
+    print("[FINAL ANSWER] Source: RAG")
     print("=" * 80)
 
     messages = []
@@ -54,24 +45,14 @@ Conversation summary from earlier messages:
         )
 
     # ========================================================
-    # SYSTEM PROMPT
+    # RAG SYSTEM PROMPT
     # ========================================================
 
-    if source == "web":
-
-        messages.append(
-            SystemMessage(
-                content=WEB_FINAL_ANSWER_PROMPT
-            )
+    messages.append(
+        SystemMessage(
+            content=RAG_FINAL_ANSWER_PROMPT
         )
-
-    else:
-
-        messages.append(
-            SystemMessage(
-                content=RAG_FINAL_ANSWER_PROMPT
-            )
-        )
+    )
 
     # ========================================================
     # CURRENT USER QUESTION
@@ -98,10 +79,8 @@ Conversation summary from earlier messages:
         )
 
     # ========================================================
-    # ONLY ADD RELEVANT TOOL RESULT
+    # ONLY RAG TOOL RESULT
     # ========================================================
-
-    relevant_tool_message = None
 
     for message in reversed(
         state.get("messages", [])
@@ -112,37 +91,21 @@ Conversation summary from earlier messages:
             ToolMessage
         ):
 
-            if source == "web":
+            if message.name == "unified_rag_tool":
 
-                if (
-                    message.name
-                    == "web_search"
-                ):
+                messages.append(
+                    message
+                )
 
-                    relevant_tool_message = message
-                    break
-
-            else:
-
-                if (
-                    message.name
-                    == "unified_rag_tool"
-                ):
-
-                    relevant_tool_message = message
-                    break
-
-    if relevant_tool_message:
-
-        messages.append(
-            relevant_tool_message
-        )
+                break
 
     # ========================================================
-    # GENERATE ANSWER
+    # FINAL LLM CALL
     # ========================================================
 
-    print("Here is the final message go to LLM after ",source," this is final NODE ANSWER \n /n ",messages, " \n /n")
+    print(
+        "[FINAL ANSWER] Sending RAG context to LLM"
+    )
 
     response = llm.invoke(
         messages,

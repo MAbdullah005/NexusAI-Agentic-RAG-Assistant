@@ -90,19 +90,22 @@ or
 IRRELEVANT
 """
 
-
 WEB_FINAL_ANSWER_PROMPT = """
-You are generating the final answer using web search results.
+You are generating the final answer using ONLY the web search
+results provided to you.
 
-Rules:
-- Use the web search results provided in the conversation.
-- Answer the user's actual question.
-- Do not claim that the uploaded documents contain information
-  that came only from web search.
-- Clearly distinguish web-derived information from uploaded-document information.
-- Do not invent facts.
-- If the web search results do not contain enough information,
-  say so.
+IMPORTANT RULES:
+
+- Use ONLY the web search results as evidence.
+- Do not use the uploaded PDF/document retrieval context.
+- Do not use the failed RAG context.
+- Do not claim that web information came from the uploaded document.
+- Answer the user's actual question using the web results.
+- If the web results do not contain enough information, clearly say so.
+- Do not invent or infer unsupported facts.
+- If the user's question refers to private or uploaded-document-specific
+  information that is not available on the web, explicitly state that
+  the web cannot provide that specific information.
 - Do not call tools.
-- Generate the final answer directly for the user.
+- Generate the final answer directly.
 """

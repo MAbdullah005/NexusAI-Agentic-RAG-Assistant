@@ -57,6 +57,9 @@ def initialize_chat_state():
     if "pending_hitl" not in st.session_state:
         st.session_state["pending_hitl"] = None
 
+    if "hitl_processing" not in st.session_state:
+       st.session_state["hitl_processing"] = None
+
 
 # CREATE INITIAL THREAD
 
@@ -1327,11 +1330,16 @@ def render_chat_ui():
 
     with col_video:
 
-        render_media()
+        if st.session_state.get("hitl_processing"):
+            st.info("⏳ Processing your request ")
+        else:
+
+            render_media()
 
 
 
 # .........
+
 
 def process_hitl_resume(thread_id, decision):
 
@@ -1340,6 +1348,7 @@ def process_hitl_resume(thread_id, decision):
     print("=" * 80)
     print(f"[HITL RESUME] Thread: {thread_id}")
     print(f"[HITL RESUME] Decision: {decision}")
+    st.session_state["hitl_processing"] = True
 
     response = resume_chat(
         thread_id=thread_id,
@@ -1347,20 +1356,22 @@ def process_hitl_resume(thread_id, decision):
     )
 
     if response is None:
+        st.session_state["hitl_processing"] = False
 
         st.error(
             "❌ Unable to connect to backend."
         )
 
-        return
+        st.stop()
 
     if response.status_code == 401:
+        st.session_state["hitl_processing"] = False
 
         logout()
-        return
+        st.stop()
 
     if response.status_code != 200:
-
+        st.session_state["hitl_processing"] = False
         try:
 
             detail = response.json().get(
@@ -1376,7 +1387,7 @@ def process_hitl_resume(thread_id, decision):
             f"❌ Resume error: {detail}"
         )
 
-        return
+        st.stop()
 
     try:
 
@@ -1454,6 +1465,7 @@ def process_hitl_resume(thread_id, decision):
         "pending_hitl",
         None
     )
+    st.session_state["hitl_processing"]=False
 
     # --------------------------------------------------------
     # Put final answer in assistant message

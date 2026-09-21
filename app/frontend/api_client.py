@@ -74,7 +74,7 @@ def login(email: str, password: str):
                 "email": email,
                 "password": password
             },
-            timeout=30
+            timeout=60
         )
 
         return response
@@ -97,7 +97,7 @@ def signup(email: str, password: str):
                 "email": email,
                 "password": password
             },
-            timeout=30
+            timeout=60
         )
 
         return response
@@ -115,7 +115,7 @@ def get_current_user(token: str):
         response = requests.get(
             API_ME,
             headers=auth_headers(token),
-            timeout=30
+            timeout=60
         )
 
         return response
@@ -135,7 +135,7 @@ def forgot_password(email: str):
             json={
                 "email": email
             },
-            timeout=30
+            timeout=60
         )
 
         return response
@@ -156,7 +156,7 @@ def reset_password(token: str, new_password: str):
                 "token": token,
                 "new_password": new_password
             },
-            timeout=30
+            timeout=60
         )
 
         return response
@@ -178,7 +178,7 @@ def send_message(token: str, message: str, thread_id: str):
                 "thread_id": thread_id
             },
             headers=auth_headers(token),
-            timeout=120
+            timeout=300
         )
 
         return response
@@ -197,7 +197,7 @@ def create_thread(token: str):
         response = requests.post(
             API_NEW_THREAD,
             headers=auth_headers(token),
-            timeout=30
+            timeout=60
         )
 
         return response
@@ -215,7 +215,7 @@ def get_threads(token: str):
         response = requests.get(
             API_THREADS,
             headers=auth_headers(token),
-            timeout=30
+            timeout=60
         )
 
         return response
@@ -233,7 +233,7 @@ def get_thread_details(token: str, thread_id: str):
         response = requests.get(
             API_THREAD_DETAILS.format(thread_id=thread_id),
             headers=auth_headers(token),
-            timeout=30
+            timeout=60
         )
 
         return response
@@ -273,7 +273,7 @@ def get_youtube(token: str, thread_id: str):
         response = requests.get(
             API_GET_YOUTUBE.format(thread_id=thread_id),
             headers=auth_headers(token),
-            timeout=30
+            timeout=60
         )
 
         return response
@@ -369,7 +369,7 @@ def get_thread_documents(token: str, thread_id: str):
                 thread_id=thread_id
             ),
             headers=auth_headers(token),
-            timeout=30
+            timeout=60
         )
 
         return response
@@ -389,7 +389,7 @@ def get_thread_sources(token: str, thread_id: str):
                 thread_id=thread_id
             ),
             headers=auth_headers(token),
-            timeout=30
+            timeout=60
         )
 
         return response
@@ -419,7 +419,7 @@ def generate_title(
                 "message": message
             },
             headers=auth_headers(token),
-            timeout=60
+            timeout=300
         )
 
         return response
@@ -492,7 +492,7 @@ def resume_chat(
                 "decision": decision
             },
             headers=get_auth_headers(),
-            timeout=120
+            timeout=400
         )
 
         return response

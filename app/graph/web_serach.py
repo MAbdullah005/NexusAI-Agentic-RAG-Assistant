@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-import json
-
 from app.graph.state import ChatState
 from app.tools.search_tool import search_tool
-from langchain_core.messages import ToolMessage
+
+from langchain_core.messages import AIMessage
 
 
 def web_search_node(state: ChatState):
@@ -14,11 +13,11 @@ def web_search_node(state: ChatState):
         []
     )
 
-    user_question = None
+    # ========================================================
+    # GET ORIGINAL USER QUESTION
+    # ========================================================
 
-    # --------------------------------------------------------
-    # Get original user question
-    # --------------------------------------------------------
+    user_question = None
 
     for message in reversed(messages):
 
@@ -34,7 +33,14 @@ def web_search_node(state: ChatState):
     if not user_question:
 
         return {
-            "messages": []
+            "messages": [
+                AIMessage(
+                    content=(
+                        "I couldn't determine the user's question."
+                    )
+                )
+            ],
+            "answer_source": "web"
         }
 
     print("\n" + "=" * 80)
@@ -42,16 +48,28 @@ def web_search_node(state: ChatState):
     print("=" * 80)
 
     print(
-        f"[WEB SEARCH] Query: {user_question}"
+        f"[WEB SEARCH] Original question: {user_question}"
     )
 
-    # --------------------------------------------------------
-    # Run web search
-    # --------------------------------------------------------
+    # ========================================================
+    # BUILD SEARCH QUERY
+    # ========================================================
 
-    result = search_tool.invoke(
+    web_query = build_web_query(
+        user_question
+    )
+
+    print(
+        f"[WEB SEARCH] Search query: {web_query}"
+    )
+
+    # ========================================================
+    # SEARCH WEB
+    # ========================================================
+
+    results = search_tool.invoke(
         {
-            "query": user_question
+            "query": web_query
         }
     )
 
@@ -60,43 +78,120 @@ def web_search_node(state: ChatState):
     )
 
     print(
-        f"[WEB SEARCH] Result type: {type(result)}"
+        f"[WEB SEARCH] Result type: {type(results)}"
     )
 
-    print(
-        f"[WEB SEARCH] Number of results: "
-        f"{len(result) if isinstance(result, list) else 'N/A'}"
+    # ========================================================
+    # NO RESULTS
+    # ========================================================
+
+    if not results:
+
+        return {
+            "messages": [
+                AIMessage(
+                    content=(
+                        "I couldn't find relevant information "
+                        "from the web."
+                    )
+                )
+            ],
+            "answer_source": "web"
+        }
+
+    # ========================================================
+    # FORMAT WEB RESULTS DIRECTLY
+    # ========================================================
+
+    response_parts = []
+
+    response_parts.append(
+        f"🌐 **Web search results for:** `{web_query}`\n"
     )
 
-    # --------------------------------------------------------
-    # Convert search results to a valid LangChain message
-    # --------------------------------------------------------
+    for index, result in enumerate(
+        results[:5],
+        start=1
+    ):
 
-    if isinstance(result, list):
-
-        search_content = json.dumps(
-            result,
-            ensure_ascii=False,
-            indent=2
+        title = result.get(
+            "title",
+            "Untitled"
         )
 
-    else:
+        url = result.get(
+            "url",
+            ""
+        )
 
-        search_content = str(result)
+        content = result.get(
+            "content",
+            ""
+        )
 
-    web_message = ToolMessage(
-        content=search_content,
-        name="web_search",
-        tool_call_id="hitl_web_search"
+        score = result.get(
+            "score"
+        )
+
+        response_parts.append(
+            f"""
+### {index}. {title}
+
+{content}
+
+🔗 {url}
+"""
+        )
+
+    final_web_response = "\n".join(
+        response_parts
     )
 
     print(
-        "[WEB SEARCH] Search results converted to ToolMessage"
+        "[WEB SEARCH] Direct web response prepared"
     )
 
-    print("\n \n \n \n Here is the web serach data last wrods ",web_message,"\n /n \n /n")
+    # ========================================================
+    # RETURN DIRECTLY TO USER
+    # ========================================================
 
     return {
-        "messages": [web_message],
+        "messages": [
+            AIMessage(
+                content=final_web_response
+            )
+        ],
         "answer_source": "web"
     }
+
+
+def build_web_query(
+    question: str
+) -> str:
+
+    query = question.strip()
+
+    phrases_to_remove = [
+        "i have given you pdf",
+        "i have give you pdf",
+        "i have given you a pdf",
+        "i have give you a pdf",
+        "from this pdf",
+        "from the pdf",
+        "from this document",
+        "from the document",
+        "from this",
+    ]
+
+    for phrase in phrases_to_remove:
+
+        query = query.replace(
+            phrase,
+            ""
+        )
+
+    query = " ".join(
+        query.split()
+    )
+
+    return query
