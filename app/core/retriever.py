@@ -2,13 +2,17 @@ from __future__ import annotations
 
 import os
 import sqlite3
-from typing import Dict, Any
+import hashlib
+from typing import Dict, Any, List
 
 from langchain_community.vectorstores import FAISS
 from app.llm.embeddings import get_embeddings
 from app.memory.sqlite_memory import checkpointer
 from rank_bm25 import BM25Okapi
 from app.utils.logger import logger
+from app.memory.config import get_rag_top_k, get_rag_min_score
+from app.memory.historical_retriever import tokenize_text
+
 DB_PATH = "database/chatbot_conv.db"
 
 #  CACHE 
@@ -18,22 +22,22 @@ _THREAD_CACHE: Dict[str, Any] = {}
 # MAIN RETRIEVER
 def get_thread_retriever(
     thread_id: str,
-    source_type: str | None = None
+    source_type: str | None = None,
+    selected_doc_ids: list[str] | None = None,
 ):
     """
-    Load all vectorstores linked to a thread.
+    Load all vectorstores linked to a thread, optionally restricted to selected_doc_ids.
     """
-
-    cache_key = f"{thread_id}"
+    sorted_ids = ",".join(sorted(selected_doc_ids)) if selected_doc_ids else "all"
+    cache_key = f"{thread_id}:{sorted_ids}"
+    if source_type:
+        cache_key += f":{source_type}"
 
     # CACHE
-
     if cache_key in _THREAD_CACHE:
-
         print(
             f"[RETRIEVER] Using cached retriever: {cache_key}"
         )
-
         return _THREAD_CACHE[cache_key]
 
     print("\n" + "=" * 80)
@@ -42,21 +46,39 @@ def get_thread_retriever(
 
     print("Thread ID:", thread_id)
     print("Source type:", source_type)
+    print("Selected doc IDs:", selected_doc_ids)
 
     # DATABASE
-
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
     try:
-
-
-        cursor.execute(
+        if selected_doc_ids:
+            placeholders = ",".join(["?"] * len(selected_doc_ids))
+            cursor.execute(
+                f"""
+                SELECT
+                    d.doc_id,
+                    d.vectorstore_path,
+                    d.filename,
+                    d.source,
+                    d.type
+                FROM documents AS d
+                INNER JOIN thread_documents AS td
+                    ON d.doc_id = td.doc_id
+                WHERE td.thread_id = ? AND d.doc_id IN ({placeholders})
+                """,
+                [thread_id] + list(selected_doc_ids)
+            )
+        else:
+            cursor.execute(
                 """
                 SELECT
                     d.doc_id,
                     d.vectorstore_path,
-                    d.filename
+                    d.filename,
+                    d.source,
+                    d.type
                 FROM documents AS d
                 INNER JOIN thread_documents AS td
                     ON d.doc_id = td.doc_id
@@ -66,9 +88,7 @@ def get_thread_retriever(
             )
 
         rows = cursor.fetchall()
-
     finally:
-
         conn.close()
 
     print("[RETRIEVER] Database rows:")
@@ -98,7 +118,7 @@ def get_thread_retriever(
 
     vectorstores = []
 
-    for doc_id, path,filename in rows:
+    for doc_id, path, filename, doc_source, doc_type in rows:
 
         print("\n" + "-" * 60)
         print("Loading document:")
@@ -127,9 +147,19 @@ def get_thread_retriever(
             )
 
             for doc in vs.docstore._dict.values():
-                doc.metadata["doc_id"]=doc_id
-                if filename:
-                    doc.metadata["filename"]=filename
+                if doc.metadata is None:
+                    doc.metadata = {}
+                doc.metadata["doc_id"] = doc_id
+                if filename and not doc.metadata.get("filename"):
+                    doc.metadata["filename"] = filename
+                elif not doc.metadata.get("filename"):
+                    doc.metadata["filename"] = os.path.basename(doc_source) if doc_source else doc_id
+
+                if doc_source and (not doc.metadata.get("source") or doc.metadata.get("source") == "unknown"):
+                    doc.metadata["source"] = doc_source
+
+                if doc_type and (not doc.metadata.get("type") or doc.metadata.get("type") in ("document", "unknown")):
+                    doc.metadata["type"] = doc_type
 
             vectorstores.append(vs)
 
@@ -229,11 +259,10 @@ def clear_thread_retriever_cache(thread_id: str):
     Remove cached retrievers for a thread.
     Call this after adding/removing documents.
     """
-
     keys_to_remove = [
         key
-        for key in _THREAD_CACHE
-        if key.startswith(f"{thread_id}:")
+        for key in list(_THREAD_CACHE.keys())
+        if key == thread_id or key.startswith(f"{thread_id}:") or key.startswith(f"{thread_id}_")
     ]
 
     for key in keys_to_remove:
@@ -245,7 +274,7 @@ def clear_thread_retriever_cache(thread_id: str):
     )
         
 
-def thread_document_metadata(thread_id: str) -> dict:
+def thread_document_metadata(thread_id: str, selected_doc_ids: list[str] | None = None) -> dict:
 
     if not thread_id:
         return {}
@@ -254,19 +283,33 @@ def thread_document_metadata(thread_id: str) -> dict:
     cursor = conn.cursor()
 
     try:
-
-        cursor.execute("""
-            SELECT
-                d.doc_id,
-                d.type,
-                d.source,
-                d.filename
-            FROM documents AS d
-            INNER JOIN thread_documents AS td
-                ON d.doc_id = td.doc_id
-            WHERE td.thread_id = ?
-            ORDER BY d.created_at ASC
-        """, (thread_id,))
+        if selected_doc_ids:
+            placeholders = ",".join(["?"] * len(selected_doc_ids))
+            cursor.execute(f"""
+                SELECT
+                    d.doc_id,
+                    d.type,
+                    d.source,
+                    d.filename
+                FROM documents AS d
+                INNER JOIN thread_documents AS td
+                    ON d.doc_id = td.doc_id
+                WHERE td.thread_id = ? AND d.doc_id IN ({placeholders})
+                ORDER BY d.created_at ASC
+            """, [thread_id] + list(selected_doc_ids))
+        else:
+            cursor.execute("""
+                SELECT
+                    d.doc_id,
+                    d.type,
+                    d.source,
+                    d.filename
+                FROM documents AS d
+                INNER JOIN thread_documents AS td
+                    ON d.doc_id = td.doc_id
+                WHERE td.thread_id = ?
+                ORDER BY d.created_at ASC
+            """, (thread_id,))
 
         rows = cursor.fetchall()
 
@@ -286,7 +329,7 @@ def thread_document_metadata(thread_id: str) -> dict:
 
         elif doc_type == "youtube":
 
-            name = f"https://www.youtube.com/watch?v={source}"
+            name = source if (source and source.startswith("http")) else f"https://www.youtube.com/watch?v={source}"
 
         else:
 
@@ -323,18 +366,18 @@ class SmartRetriever:
     def __init__(
         self,
         stores,
-        dense_k_per_document=4,
-        sparse_k_per_document=4,
-        max_chunks_per_document=4,
+        dense_k_per_document=None,
+        sparse_k_per_document=None,
+        max_chunks_per_document=None,
         min_chunks_per_document=1,
         max_total_chunks=None,
     ):
         self.stores = stores
 
-        self.dense_k_per_document = dense_k_per_document
-        self.sparse_k_per_document = sparse_k_per_document
-
-        self.max_chunks_per_document = max_chunks_per_document
+        configured_top_k = get_rag_top_k()
+        self.dense_k_per_document = dense_k_per_document or max(4, configured_top_k)
+        self.sparse_k_per_document = sparse_k_per_document or max(4, configured_top_k)
+        self.max_chunks_per_document = max_chunks_per_document or max(4, configured_top_k)
         self.min_chunks_per_document = min_chunks_per_document
 
         # If None, calculate dynamically based on number of documents.
@@ -425,11 +468,11 @@ class SmartRetriever:
         # BUILD BM25
 
         self.bm25_docs = [
-            doc.page_content.split()
+            tokenize_text(doc.page_content) or ["__empty__"]
             for doc in self.all_documents
         ]
 
-        if self.bm25_docs:
+        if self.bm25_docs and any(t != ["__empty__"] for t in self.bm25_docs):
 
             self.bm25 = BM25Okapi(
                 self.bm25_docs
@@ -459,20 +502,21 @@ class SmartRetriever:
 
     def _chunk_key(self, doc):
         """
-        Unique key for a chunk.
+        Unique key for a chunk combining document identity and normalized content hash.
         """
+        metadata = doc.metadata or {}
+        chunk_id = metadata.get("chunk_id")
+        if chunk_id:
+            return str(chunk_id)
 
         document_key = self._document_key(doc)
-
         content = (
             doc.page_content
             or ""
         ).strip()
+        content_hash = hashlib.sha256(content.encode("utf-8")).hexdigest()[:16]
 
-        return (
-            document_key,
-            content
-        )
+        return f"{document_key}_{content_hash}"
 
     # DENSE RETRIEVAL
 
@@ -540,7 +584,12 @@ class SmartRetriever:
 
         print("\n[BM25] Starting sparse retrieval...")
 
-        tokenized_query = query.split()
+        tokenized_query = tokenize_text(query)
+        if not tokenized_query:
+            tokenized_query = [w.lower() for w in query.split() if w.strip()]
+
+        if not tokenized_query:
+            return sparse_results
 
         scores = self.bm25.get_scores(
             tokenized_query
@@ -598,158 +647,111 @@ class SmartRetriever:
 
         return sparse_results
 
-    # HYBRID SCORE
-
-    def _hybrid_score(self, doc):
-
-        metadata = doc.metadata or {}
-
-        dense_distance = metadata.get(
-            "dense_score"
-        )
-
-        bm25_score = metadata.get(
-            "bm25_score",
-            0.0
-        )
-
-        # Dense score
-        #
-        # FAISS distance:
-        # lower = better
-        #
-        # Convert it into a similarity-like value.
-
-        if dense_distance is None:
-
-            dense_similarity = 0.0
-
-        else:
-
-            dense_similarity = (
-                1.0 / (1.0 + float(dense_distance))
-            )
-
-        # BM25
-
-        bm25_component = float(
-            bm25_score
-        )
-
-        # Hybrid score
-        #
-        # Dense = main signal
-        # BM25  = lexical boost
-
-        score = (
-            dense_similarity
-            +
-            (0.30 * bm25_component)
-        )
-
-        return score
-
-    # MERGE RESULTS
+    # RECIPROCAL RANK FUSION (RRF) & MERGE RESULTS
 
     def _merge_results(
         self,
         dense_results,
         sparse_results
     ):
-
-        combined = (
-            dense_results
-            +
-            sparse_results
-        )
-
+        """
+        Merge dense and sparse results using Reciprocal Rank Fusion (RRF).
+        RRF(d) = sum_{m in {dense, bm25}} 1 / (60 + rank_m(d))
+        Applies content deduplication and minimum score filtering.
+        """
         unique_docs = {}
 
-        for doc in combined:
+        # 1. Rank dense results
+        dense_candidates = []
+        for doc in dense_results:
+            key = self._chunk_key(doc)
+            dist = doc.metadata.get("dense_score")
+            sim = 1.0 / (1.0 + float(dist)) if dist is not None else 0.0
+            doc.metadata["dense_sim"] = sim
+            dense_candidates.append((key, doc, sim))
 
-            content = (
-                doc.page_content
-                or ""
-            ).strip()
+        dense_candidates.sort(key=lambda x: x[2], reverse=True)
+        dense_ranks = {}
+        for rank, (key, doc, sim) in enumerate(dense_candidates, start=1):
+            if key not in dense_ranks:
+                dense_ranks[key] = rank
+            if key not in unique_docs:
+                unique_docs[key] = doc
+            else:
+                existing_sim = unique_docs[key].metadata.get("dense_sim", 0.0)
+                if sim > existing_sim:
+                    unique_docs[key].metadata["dense_sim"] = sim
+                    unique_docs[key].metadata["dense_score"] = doc.metadata.get("dense_score")
 
-            if not content:
+        # 2. Rank sparse results
+        sparse_candidates = []
+        for doc in sparse_results:
+            key = self._chunk_key(doc)
+            score = float(doc.metadata.get("bm25_score", 0.0))
+            if score > 0:
+                sparse_candidates.append((key, doc, score))
+
+        sparse_candidates.sort(key=lambda x: x[2], reverse=True)
+        sparse_ranks = {}
+        for rank, (key, doc, score) in enumerate(sparse_candidates, start=1):
+            if key not in sparse_ranks:
+                sparse_ranks[key] = rank
+            if key not in unique_docs:
+                unique_docs[key] = doc
+            else:
+                existing_score = float(unique_docs[key].metadata.get("bm25_score", 0.0))
+                if score > existing_score:
+                    unique_docs[key].metadata["bm25_score"] = score
+
+        # 3. Compute RRF score
+        rrf_constant = 60.0
+        min_score = get_rag_min_score()
+
+        documents = []
+        for key, doc in unique_docs.items():
+            r_dense = dense_ranks.get(key)
+            r_sparse = sparse_ranks.get(key)
+
+            rrf_score = 0.0
+            if r_dense is not None:
+                rrf_score += 1.0 / (rrf_constant + r_dense)
+            if r_sparse is not None:
+                rrf_score += 1.0 / (rrf_constant + r_sparse)
+
+            # Small dense similarity bonus for deterministic tie-breaking
+            dense_sim = doc.metadata.get("dense_sim", 0.0)
+            final_score = rrf_score + (0.001 * dense_sim)
+
+            doc.metadata["rrf_score"] = rrf_score
+            doc.metadata["hybrid_score"] = final_score
+
+            if min_score > 0 and final_score < min_score:
                 continue
 
-            key = self._chunk_key(doc)
+            documents.append(doc)
 
-            if key not in unique_docs:
-
-                unique_docs[key] = doc
-
-            else:
-
-                # If the same chunk was found by both
-                # dense and BM25 retrieval, keep the
-                # strongest scores from both.
-
-                existing = unique_docs[key]
-
-                existing_dense = existing.metadata.get(
-                    "dense_score"
-                )
-
-                new_dense = doc.metadata.get(
-                    "dense_score"
-                )
-
-                if (
-                    new_dense is not None
-                    and (
-                        existing_dense is None
-                        or new_dense < existing_dense
-                    )
-                ):
-
-                    existing.metadata[
-                        "dense_score"
-                    ] = new_dense
-
-                existing_bm25 = existing.metadata.get(
-                    "bm25_score",
-                    0.0
-                )
-
-                new_bm25 = doc.metadata.get(
-                    "bm25_score",
-                    0.0
-                )
-
-                if new_bm25 > existing_bm25:
-
-                    existing.metadata[
-                        "bm25_score"
-                    ] = new_bm25
-
-        documents = list(
-            unique_docs.values()
-        )
-
-        # Calculate final hybrid score
-
-        for doc in documents:
-
-            doc.metadata[
-                "hybrid_score"
-            ] = self._hybrid_score(doc)
-
-        # Highest hybrid score first
-
+        # Sort by hybrid score descending
         documents.sort(
-            key=lambda doc: doc.metadata.get(
-                "hybrid_score",
-                0.0
-            ),
+            key=lambda doc: doc.metadata.get("hybrid_score", 0.0),
             reverse=True
         )
 
-        return documents
+        # 4. Content-level deduplication
+        seen_contents = set()
+        deduped = []
+        for doc in documents:
+            clean_content = " ".join((doc.page_content or "").strip().split()).lower()
+            if not clean_content:
+                continue
+            content_hash = hashlib.sha256(clean_content.encode("utf-8")).hexdigest()
+            if content_hash in seen_contents:
+                continue
+            seen_contents.add(content_hash)
+            deduped.append(doc)
 
-    # BALANCED MULTI-DOCUMENT SELECTION
+        return deduped
+
+    # RELEVANCE-FIRST BALANCED MULTI-DOCUMENT SELECTION
 
     def _balanced_selection(
         self,
@@ -757,35 +759,25 @@ class SmartRetriever:
         query
     ):
         """
-        Select relevant chunks while preventing one document
-        from dominating the final context.
-
-        The method is relevance-aware rather than blindly
-        allocating equal numbers to every document.
+        Select relevant chunks across documents.
+        Prioritizes query-relevant documents and prevents irrelevant attached documents
+        from choking the context of relevant documents, while ensuring balanced
+        representation when multiple documents are genuinely relevant.
         """
 
         if not documents:
-
             return []
 
         # Group candidate chunks by document
-
         grouped = {}
-
         for doc in documents:
-
             document_key = self._document_key(doc)
-
             if document_key not in grouped:
-
                 grouped[document_key] = []
-
             grouped[document_key].append(doc)
 
-        # Sort chunks inside every document
-
+        # Sort chunks inside each document by hybrid score descending
         for document_key in grouped:
-
             grouped[document_key].sort(
                 key=lambda doc: doc.metadata.get(
                     "hybrid_score",
@@ -795,145 +787,120 @@ class SmartRetriever:
             )
 
         document_count = len(grouped)
+        top_overall_score = documents[0].metadata.get("hybrid_score", 0.0) if documents else 0.0
 
         print(
-            f"\n[BALANCED] Documents found: "
-            f"{document_count}"
+            f"\n[BALANCED] Documents found: {document_count}, Top score: {top_overall_score:.4f}"
         )
 
-        # Dynamic final context size
-
-        if self.max_total_chunks is not None:
-
-            total_limit = self.max_total_chunks
-
-        else:
-
-            if document_count <= 2:
-
-                total_limit = 8
-
-            elif document_count <= 4:
-
-                total_limit = document_count * 3
-
-            elif document_count <= 6:
-
-                total_limit = document_count * 3
-
-            elif document_count <= 10:
-
-                total_limit = document_count * 2
-
-            else:
-
-                total_limit = min(
-                    document_count * 2,
-                    30
-                )
-
-        # Maximum chunks per document
-
-        max_per_document = min(
-            self.max_chunks_per_document,
-            max(
-                1,
-                total_limit // document_count
-            )
-        )
-
-        print(
-            f"[BALANCED] Total chunk limit: "
-            f"{total_limit}"
-        )
-
-        print(
-            f"[BALANCED] Max chunks/document: "
-            f"{max_per_document}"
-        )
-
-        # First pass:
-        #
-        # Give every document at least one relevant chunk
-        # when available.
-
-        selected = []
-
-        selected_keys = set()
-
+        # Filter candidate documents for query relevance:
+        # A document is considered relevant if its top chunk has a positive BM25 score
+        # OR its hybrid score is at least 45% of the highest scored chunk across all documents.
+        relevant_groups = {}
         for document_key, docs in grouped.items():
-
             if not docs:
                 continue
+            best_chunk = docs[0]
+            best_score = best_chunk.metadata.get("hybrid_score", 0.0)
+            bm25_score = best_chunk.metadata.get("bm25_score", 0.0)
 
+            if top_overall_score <= 0 or (best_score >= 0.45 * top_overall_score) or (bm25_score > 0):
+                relevant_groups[document_key] = docs
+            else:
+                print(f"[BALANCED] Document '{document_key}' filtered out as irrelevant (score: {best_score:.4f} vs top {top_overall_score:.4f}, BM25: {bm25_score})")
+
+        # Fallback: if strict filtering excluded all documents, keep original grouping
+        active_groups = relevant_groups if relevant_groups else grouped
+        active_doc_count = len(active_groups)
+
+        # Dynamic final context size respecting configured RAG top_k
+        configured_top_k = get_rag_top_k()
+        if self.max_total_chunks is not None:
+            total_limit = self.max_total_chunks
+        else:
+            total_limit = max(configured_top_k, active_doc_count)
+
+        # Maximum chunks per document
+        if active_doc_count <= 1:
+            max_per_document = total_limit
+        else:
+            # Allow flexible allocation so relevant documents are not starved
+            max_per_document = max(2, (total_limit + active_doc_count - 1) // active_doc_count)
+
+        print(
+            f"[BALANCED] Active relevant documents: {active_doc_count}/{document_count}"
+        )
+        print(
+            f"[BALANCED] Total chunk limit: {total_limit}, Max chunks/document: {max_per_document}"
+        )
+
+        selected = []
+        selected_keys = set()
+
+        # Pass 1: Give every relevant document its best chunk
+        for document_key, docs in active_groups.items():
+            if not docs:
+                continue
             best_doc = docs[0]
-
+            cand_key = self._chunk_key(best_doc)
             selected.append(best_doc)
+            selected_keys.add(cand_key)
 
-            selected_keys.add(
-                self._chunk_key(best_doc)
-            )
-
-        # Second pass:
-        #
-        # Round-robin additional chunks.
-        #
-        # This prevents the first document from taking
-        # the entire context.
-
+        # Pass 2: Round-robin additional chunks across relevant documents up to max_per_document
         current_round = 2
-
         while len(selected) < total_limit:
-
             added_this_round = False
-
-            for document_key, docs in grouped.items():
-
+            for document_key, docs in active_groups.items():
                 if len(selected) >= total_limit:
                     break
 
-                # How many chunks from this document
-                # are already selected?
                 current_count = sum(
                     1
                     for doc in selected
-                    if self._document_key(doc)
-                    == document_key
+                    if self._document_key(doc) == document_key
                 )
 
                 if current_count >= max_per_document:
                     continue
-
                 if current_count >= len(docs):
                     continue
 
                 candidate = docs[current_count]
-
-                candidate_key = self._chunk_key(
-                    candidate
-                )
-
+                candidate_key = self._chunk_key(candidate)
                 if candidate_key in selected_keys:
                     continue
 
                 selected.append(candidate)
-
-                selected_keys.add(
-                    candidate_key
-                )
-
+                selected_keys.add(candidate_key)
                 added_this_round = True
 
             if not added_this_round:
                 break
-
             current_round += 1
 
-        # Final global ordering
-        #
-        # Important:
-        # We balance selection first, then order by relevance.
+        # Pass 3: If still under total_limit, fill remaining capacity from best remaining chunks
+        if len(selected) < total_limit:
+            remaining_candidates = []
+            for document_key, docs in active_groups.items():
+                for doc in docs:
+                    cand_key = self._chunk_key(doc)
+                    if cand_key not in selected_keys:
+                        remaining_candidates.append(doc)
 
+            remaining_candidates.sort(
+                key=lambda doc: doc.metadata.get("hybrid_score", 0.0),
+                reverse=True
+            )
+
+            for candidate in remaining_candidates:
+                if len(selected) >= total_limit:
+                    break
+                cand_key = self._chunk_key(candidate)
+                if cand_key not in selected_keys:
+                    selected.append(candidate)
+                    selected_keys.add(cand_key)
+
+        # Final global ordering by relevance
         selected.sort(
             key=lambda doc: doc.metadata.get(
                 "hybrid_score",
@@ -943,32 +910,15 @@ class SmartRetriever:
         )
 
         # Print distribution
-
         distribution = {}
-
         for doc in selected:
-
             key = self._document_key(doc)
+            distribution[key] = distribution.get(key, 0) + 1
 
-            distribution[key] = (
-                distribution.get(key, 0)
-                + 1
-            )
-
-        print(
-            "\n[BALANCED] Final distribution:"
-        )
-
+        print("\n[BALANCED] Final distribution:")
         for key, count in distribution.items():
-
-            print(
-                f"    {key}: {count} chunks"
-            )
-
-        print(
-            f"[BALANCED] Final chunks: "
-            f"{len(selected)}"
-        )
+            print(f"    {key}: {count} chunks")
+        print(f"[BALANCED] Final chunks: {len(selected)}")
 
         return selected
 

@@ -9,20 +9,19 @@ AVAILABLE TOOLS:
 1. unified_rag_tool
 
 Use this tool when the user's question can be answered
-from uploaded PDFs, resumes, documents, reports, files,
-or uploaded YouTube videos.
+from uploaded PDFs, documents, reports, files, YouTube videos,
+or attached web/blog articles and URLs.
 
 If the question refers to information that may exist
-inside uploaded sources, use unified_rag_tool.
+inside attached sources or uploaded documents, ALWAYS use unified_rag_tool.
 
 Examples:
 
-- Summarize the uploaded resume.
-- Compare the uploaded resumes.
-- Which candidate has better AI experience?
-- What skills are listed in the resume?
-- What did the uploaded document say about AWS?
-- Summarize all uploaded PDFs.
+- Summarize the uploaded document or PDF.
+- What does the attached web article say?
+- What are the key points in the YouTube video?
+- Compare the uploaded documents.
+- What skills/facts are mentioned in the attached sources?
 
 IMPORTANT:
 

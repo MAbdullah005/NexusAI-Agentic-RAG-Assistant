@@ -28,3 +28,5 @@ class ChatState(TypedDict, total=False):
     hitl_decision : str
 
     answer_source: str
+
+    retrieved_docs: List[Dict[str, Any]]

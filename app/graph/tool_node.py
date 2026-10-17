@@ -19,4 +19,4 @@ tools = [
 llm_with_tools = llm.bind_tools(tools)
 
 
-tool_node = ToolNode(tools)
+tool_node = ToolNode(tools, handle_tool_errors=True)

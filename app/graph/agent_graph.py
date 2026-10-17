@@ -10,6 +10,7 @@ from app.graph.nodes import chat_node
 from app.graph.tool_node import tool_node
 from app.graph.not_found import not_found_answer_node
 from app.graph.web_serach import web_search_node
+from app.graph.message_cleanup import cleanup_messages
 from app.graph.fin_ans import final_answer_node
 from app.graph.crag_grader import crag_relevance_grader
 from app.graph.hitl import human_approval_node
@@ -22,34 +23,30 @@ from app.memory.stm import summarize_memory
 from app.utils.logger import get_logger
 
 
+from app.memory.config import get_summarization_threshold
+
 logger = get_logger(__name__)
 
 
-MAX_MESSAGES_BEFORE_SUMMARY = 12
-
-
-# ============================================================
-# MEMORY CHECK
-# ============================================================
-
 def should_summarize(state: ChatState):
     """
-    Decide whether conversation memory should be summarized.
+    Decide whether conversation memory should be summarized based on configured threshold.
     """
 
     messages = state.get("messages", [])
 
     message_count = len(messages)
+    max_threshold = get_summarization_threshold()
 
     logger.info(
-        f"[MEMORY] Current message count: {message_count}"
+        f"[MEMORY] Current message count: {message_count} (threshold: {max_threshold})"
     )
 
     print(
-        f"[MEMORY] Current message count: {message_count}"
+        f"[MEMORY] Current message count: {message_count} (threshold: {max_threshold})"
     )
 
-    if message_count > MAX_MESSAGES_BEFORE_SUMMARY:
+    if message_count > max_threshold:
 
         logger.info(
             "[MEMORY] Conversation too large -> summarizing"
@@ -85,59 +82,63 @@ def route_after_hitl(state: ChatState):
         decision
     ).lower().strip()
 
-    print("\n" + "=" * 80)
-    print("[HITL ROUTER]")
-    print("=" * 80)
+    logger.info(f"[HITL ROUTER] Decision: {decision}")
 
-    print(
-        f"[HITL ROUTER] Decision: {decision}"
-    )
-
-    if decision == "yes":
-
-        print(
-            "[HITL ROUTER] YES → web_search"
-        )
-
+    if decision in ("yes", "approve", "true", "1"):
+        logger.info("[HITL ROUTER] YES -> web_search")
         return "web_search"
 
-    print(
-        "[HITL ROUTER] NO → not_found_answer"
+    # If decision is 'no', check if we have any valid RAG context to answer with
+    messages = state.get("messages", [])
+    has_rag_context = any(
+        isinstance(m, ToolMessage)
+        and m.name == "unified_rag_tool"
+        and m.content
+        and not str(m.content).startswith("⚠️")
+        and not str(m.content).startswith("❌")
+        for m in messages
     )
 
+    if has_rag_context:
+        logger.info("[HITL ROUTER] NO -> final_answer (answering with available context)")
+        return "final_answer"
+
+    logger.info("[HITL ROUTER] NO -> not_found_answer")
     return "not_found_answer"
 
-# ============================================================
-# ROUTE AFTER CHAT NODE
-# ============================================================
 
 def route_after_chat(state: ChatState):
     """
     Decide whether the LLM wants to call a tool.
+    Guards against accidental tool calling loops.
     """
+    messages = state.get("messages", [])
+
+    # Count tool executions since the last HumanMessage
+    from langchain_core.messages import HumanMessage
+    tool_count = 0
+    for m in reversed(messages):
+        if isinstance(m, HumanMessage):
+            break
+        if isinstance(m, ToolMessage):
+            tool_count += 1
+
+    MAX_TOOL_CALLS = 5
+    if tool_count >= MAX_TOOL_CALLS:
+        logger.warning(f"[ROUTER] Tool call limit reached ({tool_count} >= {MAX_TOOL_CALLS}). Forcing termination to memory_check.")
+        return "memory_check"
 
     result = tools_condition(state)
 
     if result == "tools":
-
-        print(
-            "[ROUTER] LLM requested tool → tools"
-        )
-
+        logger.info("[ROUTER] LLM requested tool -> tools")
         return "tools"
 
-    print(
-        "[ROUTER] No tool requested → memory_check"
-    )
-
+    logger.info("[ROUTER] No tool requested -> memory_check")
     return "memory_check"
 
 
 
-
-# ============================================================
-# ROUTE AFTER TOOLS
-# ============================================================
 
 def route_after_tools(state: ChatState):
     """
@@ -158,31 +159,13 @@ def route_after_tools(state: ChatState):
     for message in reversed(messages):
 
         if isinstance(message, ToolMessage):
-
-            print(
-                f"[ROUTER] Tool executed: {message.name}"
-            )
-
-            # ------------------------------------------------
-            # RAG
-            # ------------------------------------------------
+            logger.info(f"[ROUTER] Tool executed: {message.name}")
 
             if message.name == "unified_rag_tool":
-
-                print(
-                    "[ROUTER] RAG tool detected → CRAG grader"
-                )
-
+                logger.info("[ROUTER] RAG tool detected -> CRAG grader")
                 return "crag_grader"
 
-            # ------------------------------------------------
-            # OTHER TOOLS
-            # ------------------------------------------------
-
-            print(
-                "[ROUTER] Other tool detected → chat_node"
-            )
-
+            logger.info("[ROUTER] Other tool detected -> chat_node")
             return "chat_node"
 
     return "chat_node"
@@ -211,58 +194,21 @@ def route_after_crag(state: ChatState):
         "IRRELEVANT"
     )
 
-    print("\n" + "=" * 80)
-    print("[CRAG ROUTER]")
-    print("=" * 80)
-
-    print(
-        f"[CRAG ROUTER] Grade received: {grade}"
-    )
-
-    # --------------------------------------------------------
-    # GOOD
-    # --------------------------------------------------------
+    logger.info(f"[CRAG ROUTER] Grade received: {grade}")
 
     if grade == "GOOD":
-
-        print(
-            "[CRAG ROUTER] GOOD → final_answer"
-        )
-
+        logger.info("[CRAG ROUTER] GOOD -> final_answer")
         return "final_answer"
 
-    # --------------------------------------------------------
-    # PARTIAL
-    # --------------------------------------------------------
-
     if grade == "PARTIAL":
-
-        print(
-            "[CRAG ROUTER] PARTIAL → human_approval"
-        )
-
+        logger.info("[CRAG ROUTER] PARTIAL -> human_approval")
         return "human_approval"
-
-    # --------------------------------------------------------
-    # IRRELEVANT
-    # --------------------------------------------------------
 
     if grade == "IRRELEVANT":
-
-        print(
-            "[CRAG ROUTER] IRRELEVANT → human_approval"
-        )
-
+        logger.info("[CRAG ROUTER] IRRELEVANT -> human_approval")
         return "human_approval"
 
-    # --------------------------------------------------------
-    # SAFETY FALLBACK
-    # --------------------------------------------------------
-
-    print(
-        "[CRAG ROUTER] Unknown grade → human_approval"
-    )
-
+    logger.warning(f"[CRAG ROUTER] Unknown grade '{grade}' -> human_approval")
     return "human_approval"
 
 
@@ -283,16 +229,10 @@ def rag_answer_source_node(state: ChatState):
     else:
         return {"answer_source":"web"}
 
-# ============================================================
-# GRAPH
-# ============================================================
 
 graph = StateGraph(ChatState)
 
 
-# ============================================================
-# NODES
-# ============================================================
 
 graph.add_node(
     "chat_node",
@@ -346,25 +286,19 @@ graph.add_node(
 )
 
 
+
 graph.add_node(
     "memory_check",
-    lambda state: {}
+    cleanup_messages
 )
 
 
-# ============================================================
-# START
-# ============================================================
 
 graph.add_edge(
     START,
     "chat_node"
 )
 
-
-# ============================================================
-# CHAT → TOOLS / MEMORY
-# ============================================================
 
 graph.add_conditional_edges(
     "chat_node",
@@ -375,10 +309,6 @@ graph.add_conditional_edges(
     }
 )
 
-
-# ============================================================
-# TOOLS → CRAG / CHAT
-# ============================================================
 
 graph.add_conditional_edges(
     "tools",
@@ -415,6 +345,7 @@ graph.add_conditional_edges(
     route_after_hitl,
     {
         "web_search": "web_search",
+        "final_answer": "final_answer",
         "not_found_answer": "not_found_answer",
     }
 )
@@ -431,37 +362,12 @@ graph.add_edge(
 )
 
 
-# ============================================================
-# HITL
-# ============================================================
-
-# IMPORTANT:
-#
-# There is intentionally NO edge after human_approval yet.
-#
-# interrupt() pauses the graph.
-#
-# In the next step we will add:
-#
-# YES → web search
-# NO  → final "not found" answer
-#
-#
-
-
-# ============================================================
-# FINAL ANSWER → MEMORY CHECK
-# ============================================================
-
 graph.add_edge(
     "final_answer",
     "memory_check"
 )
 
 
-# ============================================================
-# MEMORY CHECK → SUMMARIZE / END
-# ============================================================
 
 graph.add_conditional_edges(
     "memory_check",
@@ -473,19 +379,12 @@ graph.add_conditional_edges(
 )
 
 
-# ============================================================
-# SUMMARY → END
-# ============================================================
 
 graph.add_edge(
     "summarize_memory",
     END
 )
 
-
-# ============================================================
-# COMPILE
-# ============================================================
 
 chatbot = graph.compile(
     checkpointer=checkpointer

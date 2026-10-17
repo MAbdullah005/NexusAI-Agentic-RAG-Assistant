@@ -19,7 +19,16 @@ from app.graph.agent_graph import chatbot
 from app.schemas.resume_chat import HITLResumeRequest
 from app.services.pdf_ingest import ingest_pdf
 from app.utils.common import extract_ai_text
-from app.memory.sqlite_memory import  get_thread_title_db, save_thread_title
+from app.memory.sqlite_memory import (
+    get_thread_title_db,
+    save_thread_title,
+    save_message,
+    get_thread_messages,
+    verify_thread_ownership,
+    backfill_thread_messages_from_checkpoint,
+    save_thread_summary,
+    get_thread_summary,
+)
 from app.llm.title_generator import generate_chat_title
 from langgraph.checkpoint.sqlite import SqliteSaver
 from fastapi import HTTPException
@@ -44,44 +53,83 @@ async def chat_endpoint(
 
     user_id = current_user["user_id"]
 
-    user_input = data["message"]
-    thread_id = data["thread_id"]
+    user_input = data.get("message")
+    thread_id = data.get("thread_id")
+    client_message_id = data.get("client_message_id") or data.get("message_id")
+    selected_doc_ids = data.get("selected_doc_ids")
 
-    # ========================================================
-    # VERIFY THREAD OWNERSHIP
-    # ========================================================
-
-    cursor = conn.cursor()
-
-    cursor.execute(
-        """
-        SELECT thread_id
-        FROM threads
-        WHERE thread_id = ?
-          AND user_id = ?
-        """,
-        (
-            thread_id,
-            user_id
+    if not user_input or not thread_id:
+        raise HTTPException(
+            status_code=400,
+            detail="message and thread_id are required."
         )
-    )
 
-    thread = cursor.fetchone()
+    # ========================================================
+    # VERIFY THREAD OWNERSHIPs
+    # ========================================================
 
-    if thread is None:
-
+    if not verify_thread_ownership(thread_id, user_id, target_conn=conn):
         raise HTTPException(
             status_code=404,
             detail="Thread not found"
         )
 
     # ========================================================
-    # LANGGRAPH CONFIG
+    # CHECK IDEMPOTENCY / CACHED RESPONSE
+    # ========================================================
+
+    user_mid = client_message_id or str(uuid.uuid4())
+    assistant_mid = f"resp_{user_mid}"
+
+    if client_message_id:
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            SELECT content
+            FROM messages
+            WHERE message_id = ? AND thread_id = ? AND user_id = ? AND role = 'assistant'
+            """,
+            (assistant_mid, thread_id, user_id)
+        )
+        cached_resp = cursor.fetchone()
+        if cached_resp:
+            logger.info(f"[CHAT API] Returning cached idempotent response for message_id={client_message_id}")
+            return {
+                "status": "completed",
+                "thread_id": thread_id,
+                "response": cached_resp[0],
+            }
+
+    # ========================================================
+    # PERSIST USER MESSAGE UPFRONT
+    # ========================================================
+
+    try:
+        save_message(
+            thread_id=thread_id,
+            user_id=user_id,
+            role="user",
+            content=user_input,
+            message_id=user_mid,
+            strict=True,
+            target_conn=conn
+        )
+    except ValueError as e:
+        logger.error(f"[CHAT API] Failed to save user message: {e}")
+        raise HTTPException(
+            status_code=400,
+            detail=str(e)
+        )
+
+    # ========================================================
+    # LANGGRAPH CONFIsG
     # ========================================================
 
     CONFIG = {
         "configurable": {
-            "thread_id": thread_id
+            "thread_id": thread_id,
+            "user_id": user_id,
+            "selected_doc_ids": selected_doc_ids,
         },
         "run_name": "chat_turn",
     }
@@ -90,16 +138,24 @@ async def chat_endpoint(
     # RUN GRAPH
     # ========================================================
 
-    response = chatbot.invoke(
-        {
-            "messages": [
-                HumanMessage(
-                    content=user_input
-                )
-            ]
-        },
-        config=CONFIG,
-    )
+    try:
+        response = chatbot.invoke(
+            {
+                "messages": [
+                    HumanMessage(
+                        content=user_input,
+                        id=user_mid
+                    )
+                ]
+            },
+            config=CONFIG,
+        )
+    except Exception as e:
+        logger.error(f"[CHAT API] Graph execution failed for thread {thread_id}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Chat execution failed: {str(e)}"
+        )
 
     print("\n" + "=" * 80)
     print("[CHAT API]")
@@ -124,7 +180,7 @@ async def chat_endpoint(
         interrupts = response["__interrupt__"]
 
         print(
-            "[CHAT API] Graph interrupted → HITL"
+            "[CHAT API] Graph interrupted -> HITL"
         )
 
         print(
@@ -156,6 +212,7 @@ async def chat_endpoint(
                     first_interrupt
                 )
 
+        # Do NOT persist incomplete assistant answer when interrupted!
         return {
             "status": "human-approval",
             "thread_id": thread_id,
@@ -167,19 +224,32 @@ async def chat_endpoint(
     # ========================================================
 
     if not response.get("messages"):
+        ai_response = "⚠️ No response generated."
+    else:
+        ai_response = extract_ai_text(
+            response["messages"][-1]
+        )
 
-        return {
-            "status": "completed",
-            "thread_id": thread_id,
-            "response": "⚠️ No response generated."
-        }
+    # Persist final assistant response
+    try:
+        save_message(
+            thread_id=thread_id,
+            user_id=user_id,
+            role="assistant",
+            content=ai_response,
+            message_id=assistant_mid,
+            strict=True,
+            target_conn=conn
+        )
+    except ValueError as e:
+        logger.error(f"[CHAT API] Failed to save assistant message: {e}")
 
-    ai_response = extract_ai_text(
-        response["messages"][-1]
-    )
+    # Persist summary if generated/updated by graph
+    if isinstance(response, dict) and response.get("summary"):
+        save_thread_summary(thread_id, response["summary"], user_id=user_id, target_conn=conn)
 
     print(
-        "[CHAT API] Normal response generated"
+        "[CHAT API] Normal response generated and persisted"
     )
 
     return {
@@ -301,9 +371,18 @@ AND user_id=?
     from app.core.web_processor import ingest_web
     doc_id = str(uuid.uuid4())
 
-    web_info=ingest_web(url=url,
-                        doc_id=doc_id,
-                        thread_id=thread_id)
+    try:
+        web_info = ingest_web(url=url, doc_id=doc_id, thread_id=thread_id)
+    except (ValueError, RuntimeError) as e:
+        raise HTTPException(
+            status_code=400,
+            detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to scrape and index web URL: {str(e)}"
+        )
 
     cursor.execute("""
 INSERT into documents (
@@ -351,53 +430,38 @@ VALUES (? , ?)
 
 # get url
 
-@router.get("get_url/{thread_id}/{doc_id}")
-def get_url(thread_id:str,
-            doc_id:str,
-            current_user:dict=Depends(get_current_user)):
-    user_id=current_user["user_id"]
-    cursor=conn.cursor()
-    # verify user belong to that therad
+@router.get("/get_url/{thread_id}/{doc_id}")
+def get_url(
+    thread_id: str,
+    doc_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    user_id = current_user["user_id"]
+    cursor = conn.cursor()
 
-    cursor.execute("""
-SELECT thread_id,
-doc_id,
-WHERE thread_id=?,
-doc_id=?
-""",
-(thread_id,doc_id)
-)
-    if cursor.fetchall() is None:
+    # Verify user owns thread and document belongs to thread
+    cursor.execute(
+        """
+        SELECT d.source
+        FROM documents d
+        JOIN thread_documents td ON d.doc_id = td.doc_id
+        JOIN threads t ON td.thread_id = t.thread_id
+        WHERE d.type = 'web'
+          AND d.doc_id = ?
+          AND td.thread_id = ?
+          AND t.user_id = ?
+        """,
+        (doc_id, thread_id, user_id)
+    )
+    row = cursor.fetchone()
+
+    if not row or not row[0]:
         raise HTTPException(
             status_code=404,
-            detail="Thread not found"
+            detail="URL not found for this thread"
         )
 
-    cursor.execute("""
-SELECT d.source
-from documents as d
-WHERE d.type="web"
-AND d.user_id=?
-AND d.doc_id=?
-AND d.thread_id=?
-""",(user_id,doc_id,thread_id)
-)
-    row=cursor.fetchall()
-
-    if row is None:
-        raise HTTPException(
-            status_code=404,
-            detail="URL not found for this Thread"
-        )
-
-    url_source=row[0]
-    if url_source is None:
-        raise HTTPException(
-            status_code=404,
-            detail="URL Not found for this thread"
-        )
-
-    return {"url":url_source}
+    return {"url": row[0]}
 
     
 
@@ -595,12 +659,32 @@ async def upload_pdf(
     with open(file_path, "wb") as f:
         f.write(content)
 
-
-    vectorstore_path = ingest_pdf(
-        file_bytes=content,
-        filename=file.filename,
-        doc_id=doc_id
-    )
+    try:
+        vectorstore_path = ingest_pdf(
+            file_bytes=content,
+            filename=file.filename,
+            doc_id=doc_id
+        )
+    except ValueError as e:
+        if os.path.exists(file_path):
+            try:
+                os.remove(file_path)
+            except OSError:
+                pass
+        raise HTTPException(
+            status_code=400,
+            detail=str(e)
+        )
+    except Exception as e:
+        if os.path.exists(file_path):
+            try:
+                os.remove(file_path)
+            except OSError:
+                pass
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to process and index PDF: {str(e)}"
+        )
 
 
     cursor.execute(
@@ -693,7 +777,8 @@ def get_thread_documents(
             d.doc_id,
             d.type,
             d.source,
-            d.created_at
+            d.created_at,
+            d.filename
         FROM documents d
         JOIN thread_documents td
             ON d.doc_id = td.doc_id
@@ -709,11 +794,15 @@ def get_thread_documents(
     documents = []
 
     for row in rows:
+        title_or_name = row[4] or row[2] or "Document"
         documents.append({
             "doc_id": row[0],
             "type": row[1],
             "source": row[2],
-            "created_at": row[3]
+            "created_at": row[3],
+            "filename": title_or_name,
+            "title": title_or_name,
+            "status": "ready"
         })
 
     return {
@@ -739,7 +828,8 @@ def get_thread_details(
         """
         SELECT
             thread_id,
-            title
+            title,
+            checkpoint_synced
         FROM threads
         WHERE thread_id = ?
           AND user_id = ?
@@ -756,35 +846,50 @@ def get_thread_details(
         )
 
     title = thread[1] or f"Chat {thread_id[:6]}"
+    is_synced = bool(thread[2]) if len(thread) > 2 and thread[2] is not None else False
 
-    # Get LangGraph messages
+    # Load messages from durable SQLite storage
+    stored_messages = get_thread_messages(thread_id, user_id, target_conn=conn)
+    if not is_synced:
+        # Check if there are any recoverable checkpoint messages missing from SQLite
+        try:
+            state = chatbot.get_state(
+                config={
+                    "configurable": {
+                        "thread_id": thread_id
+                    }
+                }
+            )
+            checkpoint_messages = state.values.get("messages", []) if state else []
+            if checkpoint_messages:
+                backfilled = backfill_thread_messages_from_checkpoint(
+                    thread_id=thread_id,
+                    user_id=user_id,
+                    checkpoint_messages=checkpoint_messages,
+                    target_conn=conn
+                )
+                if backfilled:
+                    stored_messages = get_thread_messages(thread_id, user_id, target_conn=conn)
 
-    state = chatbot.get_state(
-        config={
-            "configurable": {
-                "thread_id": thread_id
-            }
+            # Mark checkpoint as synced so subsequent details calls read directly from SQLite
+            cursor.execute(
+                "UPDATE threads SET checkpoint_synced = 1 WHERE thread_id = ?",
+                (thread_id,)
+            )
+            conn.commit()
+        except Exception as e:
+            logger.warning(f"Failed to check or backfill legacy checkpoint messages: {e}")
+
+    # Load thread summary from SQLite
+    thread_summary = get_thread_summary(thread_id, user_id=user_id, target_conn=conn)
+
+    formatted_messages = [
+        {
+            "role": msg["role"],
+            "content": msg["content"]
         }
-    )
-
-    messages = state.values.get("messages", [])
-
-    formatted_messages = []
-
-    for msg in messages:
-
-        role = (
-            "user"
-            if isinstance(msg, HumanMessage)
-            else "assistant"
-        )
-
-        formatted_messages.append(
-            {
-                "role": role,
-                "content": msg.content
-            }
-        )
+        for msg in stored_messages
+    ]
 
     # Get documents belonging to this thread
 
@@ -793,12 +898,15 @@ def get_thread_details(
         SELECT
             d.doc_id,
             d.type,
-            d.source
+            d.source,
+            d.created_at,
+            d.filename
         FROM documents d
         JOIN thread_documents td
             ON d.doc_id = td.doc_id
         WHERE td.thread_id = ?
           AND d.user_id = ?
+        ORDER BY d.created_at DESC
         """,
         (thread_id, user_id)
     )
@@ -808,17 +916,21 @@ def get_thread_details(
     documents = []
 
     for row in rows:
-
+        title_or_name = row[4] or row[2] or "Document"
         documents.append({
             "doc_id": row[0],
             "type": row[1],
-            "source": row[2]
+            "source": row[2],
+            "created_at": row[3],
+            "filename": title_or_name,
+            "title": title_or_name,
+            "status": "ready"
         })
-
 
     return {
         "thread_id": thread_id,
         "title": title,
+        "summary": thread_summary,
         "messages": formatted_messages,
         "documents": documents
     }
@@ -1040,7 +1152,13 @@ def set_youtube(
 
     from app.utils.hash_utils import hash_string
 
-    video_id = extract_video_id(youtube_url)
+    try:
+        video_id = extract_video_id(youtube_url)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=400,
+            detail=str(e)
+        )
 
     if not video_id:
         raise HTTPException(
@@ -1062,13 +1180,11 @@ def set_youtube(
     row = cursor.fetchone()
 
     if row:
-
         doc_id = row[0]
-
 
         cursor.execute(
             """
-            INSERT  INTO thread_documents (
+            INSERT INTO thread_documents (
                 thread_id,
                 doc_id
             )
@@ -1087,16 +1203,25 @@ def set_youtube(
         }
 
     # New YouTube document
-
     doc_id = str(uuid.uuid4())
 
-    vectorstore_path = ingest_youtube(
-        video_id,
-        doc_id
-    )
+    try:
+        vectorstore_path = ingest_youtube(
+            video_id,
+            doc_id
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=400,
+            detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to ingest YouTube video transcript: {str(e)}"
+        )
 
-    # Save document with OWNER
-
+    # Save document with OWNER and filename
     cursor.execute(
         """
         INSERT INTO documents (
@@ -1105,9 +1230,10 @@ def set_youtube(
             type,
             content_hash,
             source,
-            vectorstore_path
+            vectorstore_path,
+            filename
         )
-        VALUES (?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
         """,
         (
             doc_id,
@@ -1115,7 +1241,8 @@ def set_youtube(
             "youtube",
             doc_hash,
             video_id,
-            vectorstore_path
+            vectorstore_path,
+            f"YouTube ({video_id})"
         )
     )
 
@@ -1239,25 +1366,7 @@ def resume_chat(
     # Verify thread ownership
     # --------------------------------------------------------
 
-    cursor = conn.cursor()
-
-    cursor.execute(
-        """
-        SELECT thread_id
-        FROM threads
-        WHERE thread_id = ?
-          AND user_id = ?
-        """,
-        (
-            thread_id,
-            user_id
-        )
-    )
-
-    thread = cursor.fetchone()
-
-    if thread is None:
-
+    if not verify_thread_ownership(thread_id, user_id, target_conn=conn):
         raise HTTPException(
             status_code=404,
             detail="Thread not found"
@@ -1269,16 +1378,80 @@ def resume_chat(
 
     config = {
         "configurable": {
-            "thread_id": thread_id
+            "thread_id": thread_id,
+            "user_id": user_id,
         }
     }
 
-    result = chatbot.invoke(
-        Command(
-            resume=decision
-        ),
-        config=config
-    )
+    try:
+        result = chatbot.invoke(
+            Command(
+                resume=decision
+            ),
+            config=config
+        )
+    except Exception as e:
+        logger.error(f"[RESUME CHAT] Error during graph resumption for thread {thread_id}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to resume graph execution: {str(e)}"
+        )
+
+    # --------------------------------------------------------
+    # CHECK IF GRAPH IS STILL INTERRUPTED
+    # --------------------------------------------------------
+    if isinstance(result, dict) and "__interrupt__" in result:
+        interrupts = result["__interrupt__"]
+        interrupt_data = {}
+        if interrupts:
+            first_interrupt = interrupts[0]
+            if hasattr(first_interrupt, "value"):
+                interrupt_data = first_interrupt.value
+            elif isinstance(first_interrupt, dict):
+                interrupt_data = first_interrupt
+        return {
+            "status": "human-approval",
+            "thread_id": thread_id,
+            "interrupt": interrupt_data,
+            "result": result
+        }
+
+    # --------------------------------------------------------
+    # PERSIST FINAL ASSISTANT RESPONSE
+    # --------------------------------------------------------
+    messages = result.get("messages", []) if isinstance(result, dict) else []
+    ai_response = "⚠️ No response generated."
+    if messages:
+        ai_response = extract_ai_text(messages[-1])
+
+    # Determine message ID
+    if request.message_id:
+        resp_id = f"resp_{request.message_id}" if not request.message_id.startswith("resp_") else request.message_id
+    else:
+        # Check if the last message in this thread is already this exact assistant answer
+        # to prevent duplicates upon repeated resume requests
+        existing_msgs = get_thread_messages(thread_id, user_id, limit=1, target_conn=conn)
+        if existing_msgs and existing_msgs[-1]["role"] == "assistant" and existing_msgs[-1]["content"] == ai_response:
+            resp_id = existing_msgs[-1]["message_id"]
+        else:
+            resp_id = str(uuid.uuid4())
+
+    try:
+        save_message(
+            thread_id=thread_id,
+            user_id=user_id,
+            role="assistant",
+            content=ai_response,
+            message_id=resp_id,
+            strict=True,
+            target_conn=conn
+        )
+    except ValueError as e:
+        logger.error(f"[RESUME CHAT] Failed to save assistant message: {e}")
+
+    # Persist summary if generated/updated by graph upon resumption
+    if isinstance(result, dict) and result.get("summary"):
+        save_thread_summary(thread_id, result["summary"], user_id=user_id, target_conn=conn)
 
     return {
         "status": "completed",

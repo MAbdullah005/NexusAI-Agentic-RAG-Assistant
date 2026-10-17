@@ -1,37 +1,87 @@
+import re
+from typing import Optional, Dict, Any, List
+from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from app.utils.common import is_valid_chunk
 from app.utils.logger import logger
+from app.memory.config import get_rag_chunk_size, get_rag_chunk_overlap
 
-def chunk_text(text: str):
-    text_length = len(text)
-    logger.info(f"Here is the length of text this for this time {text_length}")
 
-    # 1. Adaptive chunk sizing
+def clean_text_chunk(text: str) -> str:
+    """
+    Remove excessive repeated whitespace, control characters, and normalize spaces.
+    """
+    if not text:
+        return ""
+    # Normalize excessive newlines (max 2 consecutive) and excessive horizontal whitespace
+    cleaned = re.sub(r"[ \t]+", " ", text)
+    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
+    return cleaned.strip()
 
-    if text_length < 10_000:
-        chunk_size = 1000
-        chunk_overlap = 150
 
-    elif text_length < 100_000:
-        chunk_size = 1500
-        chunk_overlap = 200
+def chunk_text(
+    text: str,
+    metadata: Optional[Dict[str, Any]] = None,
+    chunk_size: Optional[int] = None,
+    chunk_overlap: Optional[int] = None,
+    doc_id: Optional[str] = None,
+) -> List[Document]:
+    """
+    Split text into retrieval-ready document chunks with stable IDs and preserved metadata.
+    """
+    if not text or not text.strip():
+        return []
 
-    else:
-        chunk_size = 2500
-        chunk_overlap = 300
+    c_size = chunk_size if chunk_size is not None else get_rag_chunk_size()
+    c_overlap = chunk_overlap if chunk_overlap is not None else get_rag_chunk_overlap()
 
-    logger.info(f"Chunk size use for this embeding is {chunk_size} and chun overlap is {chunk_overlap}")
+    # Safety check: overlap must be strictly less than chunk_size
+    if c_overlap >= c_size:
+        c_overlap = max(0, c_size // 5)
 
-    splitter = RecursiveCharacterTextSplitter(
-        chunk_size=chunk_size,
-        chunk_overlap=chunk_overlap
+    base_metadata = dict(metadata or {})
+    target_doc_id = doc_id or base_metadata.get("doc_id", "doc")
+
+    logger.info(
+        f"[SPLITTER] Chunking text (length: {len(text)}) | "
+        f"chunk_size={c_size}, chunk_overlap={c_overlap}"
     )
 
-    docs = splitter.create_documents([text])
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=c_size,
+        chunk_overlap=c_overlap,
+        separators=["\n\n", "\n", ". ", " ", ""]
+    )
 
-    # remove empty chunks
-    chunks = [d for d in docs if d.page_content.strip()]
-    chunks = [c for c in chunks if is_valid_chunk(c.page_content)]
+    raw_docs = splitter.create_documents([text])
 
+    chunks: List[Document] = []
+    chunk_index = 0
+
+    for doc in raw_docs:
+        cleaned_content = clean_text_chunk(doc.page_content)
+        if not cleaned_content:
+            continue
+        if not is_valid_chunk(cleaned_content):
+            continue
+
+        chunk_meta = dict(base_metadata)
+        chunk_meta["chunk_id"] = f"{target_doc_id}_chunk_{chunk_index}"
+        chunk_meta["doc_id"] = target_doc_id
+        chunk_meta["chunk_index"] = chunk_index
+
+        chunks.append(
+            Document(
+                page_content=cleaned_content,
+                metadata=chunk_meta
+            )
+        )
+        chunk_index += 1
+
+    # Record total chunks in all chunk metadata
+    for c in chunks:
+        c.metadata["total_chunks"] = len(chunks)
+
+    logger.info(f"[SPLITTER] Produced {len(chunks)} valid chunks")
     return chunks
 

@@ -17,6 +17,8 @@ from app.core.retriever import (
     get_thread_retriever,
     thread_document_metadata
 )
+from app.memory.config import get_rag_top_k
+from app.utils.logger import logger
 
 
 @tool
@@ -25,37 +27,32 @@ def unified_rag_tool(
     config: Annotated[RunnableConfig, InjectedToolArg]
 ) -> str:
     """
-    Search ALL documents attached to the current thread.
+    Search documents attached to the current thread.
 
-    Use this tool whenever the user asks about uploaded:
-    - PDFs
-    - resumes
-    - documents
-    - reports
-    - YouTube videos
+    Use this tool whenever the user asks about attached sources:
+    - PDFs & reports
+    - resumes & documents
+    - YouTube videos & transcripts
+    - Web articles & blog URLs
 
-    This tool searches across ALL documents attached to the
+    This tool searches across the active documents attached to the
     current thread and does not restrict retrieval to one
     source type.
 
-    Do NOT use for internet searches or current events.
+    Do NOT use for general open internet searches; use search_tool for open internet queries.
     """
 
     try:
-
-        thread_id = config.get(
-            "configurable",
-            {}
-        ).get("thread_id")
+        configurable = config.get("configurable", {})
+        thread_id = configurable.get("thread_id")
+        selected_doc_ids = configurable.get("selected_doc_ids")
 
         if not thread_id:
             return "⚠️ Missing thread_id"
 
-
-        metadata = thread_document_metadata(thread_id)
+        metadata = thread_document_metadata(thread_id, selected_doc_ids=selected_doc_ids)
 
         if not metadata:
-
             return (
                 "⚠️ No documents attached "
                 "to this thread."
@@ -66,6 +63,7 @@ def unified_rag_tool(
         print("=" * 80)
 
         print(f"[RAG] Thread ID: {thread_id}")
+        print(f"[RAG] Selected doc IDs: {selected_doc_ids}")
         print(
             f"[RAG] Total documents: "
             f"{metadata.get('total_docs', 0)}"
@@ -77,11 +75,11 @@ def unified_rag_tool(
         )
 
         retriever = get_thread_retriever(
-            thread_id
+            thread_id,
+            selected_doc_ids=selected_doc_ids
         )
 
         if not retriever:
-
             return (
                 "⚠️ No documents loaded "
                 "for this thread."
@@ -103,43 +101,64 @@ def unified_rag_tool(
             )
 
 
+        top_k = get_rag_top_k()
         context_parts = []
 
         for i, doc in enumerate(
-            docs[:8],
+            docs[:top_k],
             start=1
         ):
 
-            doc_id = doc.metadata.get(
+            metadata = doc.metadata or {}
+            doc_id = metadata.get(
                 "doc_id",
                 "unknown"
             )
 
-            filename = doc.metadata.get(
+            filename = metadata.get(
                 "filename"
             )
 
-            source = doc.metadata.get(
+            source = metadata.get(
                 "source",
                 "unknown"
             )
 
-            # Prefer filename
-            if not filename:
+            page = metadata.get("page")
+            doc_type = metadata.get("type", "document").lower()
+            chunk_id = metadata.get("chunk_id", f"{doc_id}_{i}")
 
-                filename = os.path.basename(
-                    source
-                )
+            if doc_type == "youtube":
+                source_url = source if (source and source.startswith("http")) else (f"https://www.youtube.com/watch?v={source}" if source and source != "unknown" else "")
+                display_name = filename or f"YouTube Video ({source})"
+                header = f"""--- Retrieved Chunk {i} ---
+Type: YouTube Video
+Video: {display_name}
+URL: {source_url}
+Document ID: {doc_id}
+Chunk ID: {chunk_id}"""
+
+            elif doc_type == "web":
+                source_url = source if (source and source != "unknown") else ""
+                display_name = filename or source_url or "Web Article"
+                header = f"""--- Retrieved Chunk {i} ---
+Type: Web Article
+Title: {display_name}
+URL: {source_url}
+Document ID: {doc_id}
+Chunk ID: {chunk_id}"""
+
+            else:
+                display_name = filename or (os.path.basename(source) if source != "unknown" else doc_id)
+                page_line = f"\nPage: {page}" if page is not None else ""
+                header = f"""--- Retrieved Chunk {i} ---
+Type: PDF Document
+Document: {display_name}{page_line}
+Document ID: {doc_id}
+Chunk ID: {chunk_id}"""
 
             context_parts.append(
-                f"""
---- Retrieved Chunk {i} ---
-
-Document ID:
-{doc_id}
-
-Document:
-{filename}
+                f"""{header}
 
 Content:
 {doc.page_content}
@@ -150,39 +169,12 @@ Content:
             context_parts
         )
 
+        logger.info(f"[RAG] Successfully compiled {len(context_parts)} context chunk(s) for query: {query[:80]}")
 
-        print(
-            "\n[RAG] Retrieved document context:"
-        )
-
-        print(context)
-
-        print("=" * 80)
-        print()
-
-
-        return f"""
-{RAG_CONTEXT_PROMPT}
-
-Retrieved context:
-
-{context}
-
-Question:
-
-{query}
-"""
+        return f"Retrieved source context:\n\n{context}"
     
     except Exception as e:
-
-        print("\n" + "=" * 80)
-        print("❌ UNIFIED RAG TOOL ERROR")
-        print("=" * 80)
-
-        traceback.print_exc()
-
-        print("=" * 80 + "\n")
-
+        logger.error(f"[RAG] Unified RAG tool error: {e}", exc_info=True)
         return (
             f"❌ RAG tool error: {str(e)}"
         )

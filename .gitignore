@@ -4,3 +4,10 @@
 /README.md
 /README.md
 .README.*
+frontend/node_modules/
+frontend/.next/
+myenv/
+__pycache__/
+*.py[cod]
+.env
+.env.*
