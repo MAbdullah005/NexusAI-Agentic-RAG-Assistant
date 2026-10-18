@@ -5,9 +5,6 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { CheckCircle2, AlertCircle, ArrowRight, ShieldCheck } from "lucide-react";
 import { api } from "../../lib/api/client";
-import { Button } from "../../components/ui/button";
-import { Input } from "../../components/ui/input";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../../components/ui/card";
 
 function VerifyEmailForm() {
   const searchParams = useSearchParams();
@@ -48,119 +45,98 @@ function VerifyEmailForm() {
   };
 
   return (
-    <Card className="w-full max-w-md border-zinc-800/80 bg-zinc-950/80 backdrop-blur-xl shadow-2xl relative z-10">
-      <CardHeader className="space-y-2 text-center pb-6">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-600/15 border border-indigo-500/30 text-indigo-400 mb-2">
-          <ShieldCheck className="h-6 w-6" />
-        </div>
-        <CardTitle className="text-2xl font-bold tracking-tight text-white">
+    <div className="relative z-10 w-full max-w-md rounded-[32px] bg-white/80 backdrop-blur-2xl border border-white/90 p-8 sm:p-10 shadow-[0_25px_70px_-15px_rgba(168,85,247,0.18)]">
+      <div className="h-11 w-11 rounded-2xl bg-white shadow-[0_2px_12px_rgba(0,0,0,0.06)] border border-slate-100 flex items-center justify-center mb-5 mx-auto">
+        <ShieldCheck className="h-5 w-5 text-purple-600" />
+      </div>
+
+      <div className="text-center mb-6">
+        <h3 className="text-2xl font-bold text-slate-900 tracking-tight">
           Verify Your Email
-        </CardTitle>
-        <CardDescription className="text-zinc-400">
+        </h3>
+        <p className="text-xs sm:text-sm text-slate-500 mt-1">
           Confirm your email address to activate your NexusAI account
-        </CardDescription>
-      </CardHeader>
+        </p>
+      </div>
 
-      <CardContent className="space-y-4">
-        {loading && (
-          <div className="flex flex-col items-center justify-center py-6 space-y-3">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
-            <p className="text-sm text-zinc-400">Verifying your token...</p>
+      {error && (
+        <div className="mb-4 flex items-center gap-2.5 rounded-2xl border border-rose-200 bg-rose-50/90 px-4 py-2.5 text-xs text-rose-600">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
+
+      {success ? (
+        <div className="space-y-4 text-center py-2">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 border border-emerald-200 text-emerald-500">
+            <CheckCircle2 className="h-6 w-6" />
           </div>
-        )}
-
-        {success && (
-          <div className="space-y-6 text-center py-4">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
-              <CheckCircle2 className="h-7 w-7" />
-            </div>
-            <div className="space-y-2">
-              <h4 className="text-base font-semibold text-zinc-100">Verification Complete</h4>
-              <p className="text-sm text-zinc-400 leading-relaxed">
-                {success}
-              </p>
-            </div>
-            <div className="pt-2">
-              <Link href="/login">
-                <Button className="w-full">
-                  Sign In to NexusAI
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </Link>
-            </div>
+          <p className="text-xs text-slate-600 leading-relaxed">
+            {success}
+          </p>
+          <Link
+            href="/login"
+            className="inline-flex w-full items-center justify-center rounded-full bg-gradient-to-r from-[#d946ef] to-[#ec4899] text-white font-medium py-3 text-sm shadow-md transition-all hover:opacity-95"
+          >
+            Continue to Sign In
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Link>
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-slate-700 block" htmlFor="token">
+              Verification Token
+            </label>
+            <input
+              id="token"
+              type="text"
+              placeholder="Paste verification token"
+              value={token}
+              onChange={(e) => setToken(e.target.value)}
+              required
+              className="w-full rounded-full bg-slate-50/90 border border-slate-200/90 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-purple-400 focus:ring-4 focus:ring-purple-100/70 transition-all outline-none font-mono"
+            />
           </div>
-        )}
 
-        {error && !loading && (
-          <div className="space-y-4">
-            <div className="flex items-start gap-2.5 rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-sm text-rose-400">
-              <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-              <span>{error}</span>
-            </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full rounded-full bg-gradient-to-r from-[#d946ef] via-[#ec4899] to-[#f43f5e] hover:opacity-95 text-white font-medium py-3 text-sm shadow-[0_8px_20px_-4px_rgba(236,72,153,0.4)] transition-all active:scale-[0.99] disabled:opacity-50 flex items-center justify-center gap-2 mt-2"
+          >
+            {loading ? (
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+            ) : (
+              "Verify Email"
+            )}
+          </button>
 
-            <form onSubmit={handleSubmit} className="space-y-3">
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-zinc-300" htmlFor="manual-token">
-                  Or enter token manually:
-                </label>
-                <Input
-                  id="manual-token"
-                  type="text"
-                  placeholder="Paste verification token"
-                  value={token}
-                  onChange={(e) => setToken(e.target.value)}
-                  required
-                />
-              </div>
-              <Button type="submit" className="w-full" isLoading={loading}>
-                Retry Verification
-              </Button>
-            </form>
+          <div className="text-center pt-2">
+            <Link
+              href="/login"
+              className="text-xs text-slate-500 hover:text-slate-900 font-medium"
+            >
+              Back to Sign In
+            </Link>
           </div>
-        )}
-
-        {!tokenFromUrl && !loading && !success && !error && (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-zinc-300" htmlFor="verify-token">
-                Verification Token
-              </label>
-              <Input
-                id="verify-token"
-                type="text"
-                placeholder="Paste the verification token from your email"
-                value={token}
-                onChange={(e) => setToken(e.target.value)}
-                required
-              />
-            </div>
-            <Button type="submit" className="w-full font-semibold" isLoading={loading}>
-              Verify Token
-            </Button>
-          </form>
-        )}
-      </CardContent>
-
-      <CardFooter className="flex justify-center border-t border-zinc-800/80 pt-4">
-        <Link
-          href="/login"
-          className="text-xs text-zinc-400 hover:text-zinc-200 transition-colors"
-        >
-          Return to Sign In
-        </Link>
-      </CardFooter>
-    </Card>
+        </form>
+      )}
+    </div>
   );
 }
 
 export default function VerifyEmailPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#090a0f] p-4 relative overflow-hidden">
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[500px] h-[300px] bg-indigo-500/10 blur-[120px] rounded-full pointer-events-none" />
-      <Suspense fallback={<div className="text-zinc-400 text-sm">Loading verification...</div>}>
+    <div className="relative min-h-screen w-full flex items-center justify-center p-4 md:p-8 bg-gradient-to-br from-[#dfd0ed] via-[#f7e1ee] to-[#d6e3f8] overflow-hidden">
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-purple-300/50 blur-[100px]" />
+        <div className="absolute top-1/2 -right-24 w-96 h-96 rounded-full bg-pink-300/50 blur-[100px]" />
+        <div className="absolute -bottom-24 left-1/3 w-96 h-96 rounded-full bg-indigo-200/60 blur-[100px]" />
+      </div>
+
+      <Suspense fallback={<div className="text-slate-500 text-sm">Loading...</div>}>
         <VerifyEmailForm />
       </Suspense>
     </div>
   );
 }
-
