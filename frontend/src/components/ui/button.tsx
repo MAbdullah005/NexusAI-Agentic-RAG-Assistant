@@ -22,21 +22,21 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const baseStyles =
-      "inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 disabled:pointer-events-none disabled:opacity-50 select-none active:scale-[0.98]";
+      "inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-400/50 disabled:pointer-events-none disabled:opacity-50 select-none active:scale-[0.98]";
 
     const variantStyles = {
       default:
-        "bg-indigo-600 text-white hover:bg-indigo-500 shadow-sm shadow-indigo-950/50 hover:shadow-indigo-500/20",
+        "bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white shadow-sm shadow-pink-500/25 hover:shadow-pink-500/35",
       destructive:
         "bg-rose-600 text-white hover:bg-rose-500 shadow-sm shadow-rose-950/50",
       outline:
-        "border border-zinc-800 bg-zinc-900/60 text-zinc-200 hover:bg-zinc-800/80 hover:text-white hover:border-zinc-700",
+        "border border-pink-100 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 text-slate-700 dark:text-zinc-200 hover:bg-pink-50/60 dark:hover:bg-zinc-800/80 hover:text-slate-900 dark:hover:text-white hover:border-pink-200 dark:hover:border-zinc-700",
       secondary:
-        "bg-zinc-800 text-zinc-100 hover:bg-zinc-700/80 hover:text-white border border-zinc-700/50",
+        "bg-pink-50 dark:bg-zinc-800 text-pink-700 dark:text-zinc-100 hover:bg-pink-100 dark:hover:bg-zinc-700/80 hover:text-pink-800 dark:hover:text-white border border-pink-100 dark:border-zinc-700/50",
       ghost:
-        "text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/60",
+        "text-slate-600 dark:text-zinc-400 hover:text-pink-600 dark:hover:text-zinc-100 hover:bg-pink-50/60 dark:hover:bg-zinc-800/60",
       link:
-        "text-indigo-400 underline-offset-4 hover:underline hover:text-indigo-300",
+        "text-pink-600 dark:text-pink-400 underline-offset-4 hover:underline hover:text-pink-700 dark:hover:text-pink-300",
     };
 
     const sizeStyles = {

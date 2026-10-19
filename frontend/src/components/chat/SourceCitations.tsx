@@ -101,7 +101,7 @@ export function SourceCitations({ content, threadId, onViewPdf }: SourceCitation
         onClick={() => setExpanded(!expanded)}
         className="flex items-center gap-1.5 text-zinc-400 hover:text-zinc-200 transition-colors font-medium mb-1.5"
       >
-        <BookOpen className="h-3.5 w-3.5 text-indigo-400" />
+        <BookOpen className="h-3.5 w-3.5 text-pink-500" />
         <span>Grounded Sources & Citations ({citations.length})</span>
         {expanded ? (
           <ChevronUp className="h-3.5 w-3.5" />
@@ -140,7 +140,7 @@ export function SourceCitations({ content, threadId, onViewPdf }: SourceCitation
                   href={item.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="shrink-0 p-1 rounded hover:bg-zinc-800 text-zinc-400 hover:text-indigo-400 transition-colors"
+                  className="shrink-0 p-1 rounded hover:bg-zinc-800 text-zinc-400 hover:text-pink-400 transition-colors"
                   title="Open source link"
                 >
                   <ExternalLink className="h-3.5 w-3.5" />
@@ -148,7 +148,7 @@ export function SourceCitations({ content, threadId, onViewPdf }: SourceCitation
               ) : item.doc_id && onViewPdf ? (
                 <button
                   onClick={() => onViewPdf(item.doc_id!, item.page)}
-                  className="shrink-0 p-1 rounded hover:bg-zinc-800 text-zinc-400 hover:text-indigo-400 transition-colors"
+                  className="shrink-0 p-1 rounded hover:bg-zinc-800 text-zinc-400 hover:text-pink-400 transition-colors"
                   title="View PDF page"
                 >
                   <FileText className="h-3.5 w-3.5" />

@@ -28,6 +28,31 @@ export default function ChatPage() {
   const [pendingMessage, setPendingMessage] = useState<boolean>(false);
   const [hitlInterrupt, setHitlInterrupt] = useState<HITLInterruptData | null>(null);
 
+  // Theme state: defaults to light mode
+  const [theme, setTheme] = useState<"light" | "dark">("light");
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("nexus_auth_theme") as "light" | "dark" | null;
+    if (savedTheme === "dark") {
+      setTheme("dark");
+      document.documentElement.classList.add("dark");
+    } else {
+      setTheme("light");
+      document.documentElement.classList.remove("dark");
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const nextTheme = theme === "light" ? "dark" : "light";
+    setTheme(nextTheme);
+    localStorage.setItem("nexus_auth_theme", nextTheme);
+    if (nextTheme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  };
+
   // Split-screen workspace states
   const [workspaceOpen, setWorkspaceOpen] = useState<boolean>(true);
   const [activeMobileTab, setActiveMobileTab] = useState<"chat" | "sources">("chat");
@@ -306,14 +331,24 @@ export default function ChatPage() {
 
   if (authLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#090a0f]">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
+      <div
+        className={cn(
+          "flex min-h-screen items-center justify-center transition-colors",
+          theme === "light" ? "bg-[#fdfaff]" : "bg-[#090a0f]"
+        )}
+      >
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-pink-500 border-t-transparent" />
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-[#090a0f]">
+    <div
+      className={cn(
+        "flex h-screen w-full overflow-hidden transition-colors duration-200",
+        theme === "light" ? "bg-[#fdfaff] text-slate-900" : "bg-[#090a0f] text-white"
+      )}
+    >
       {/* Sidebar Navigation */}
       <Sidebar
         threads={threads}
@@ -329,6 +364,7 @@ export default function ChatPage() {
         onViewDocument={handleViewDocument}
         isOpenMobile={sidebarMobileOpen}
         onCloseMobile={() => setSidebarMobileOpen(false)}
+        theme={theme}
       />
 
       {/* Split-Screen Workspace: Chat Container + Source Workspace */}
@@ -355,6 +391,8 @@ export default function ChatPage() {
             onToggleWorkspace={() => setWorkspaceOpen((prev) => !prev)}
             isWorkspaceOpen={workspaceOpen}
             onSelectMobileTab={(tab) => setActiveMobileTab(tab)}
+            theme={theme}
+            onToggleTheme={toggleTheme}
           />
         </div>
 
@@ -385,6 +423,8 @@ export default function ChatPage() {
                 setWorkspaceOpen(false);
                 setActiveMobileTab("chat");
               }}
+              theme={theme}
+              onToggleTheme={toggleTheme}
             />
           </div>
         )}

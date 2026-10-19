@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useRef, useEffect } from "react";
-import { Menu, Bot, Sparkles, BookOpen, FileText, Youtube, Globe, Layers } from "lucide-react";
+import { Menu, Bot, Sparkles, BookOpen, Layers, Sun, Moon } from "lucide-react";
 import { Button } from "../ui/button";
 import { ChatMessageItem } from "./ChatMessageItem";
 import { HITLBanner } from "./HITLBanner";
@@ -23,6 +23,8 @@ interface ChatContainerProps {
   onToggleWorkspace?: () => void;
   isWorkspaceOpen?: boolean;
   onSelectMobileTab?: (tab: "chat" | "sources") => void;
+  theme?: "light" | "dark";
+  onToggleTheme?: () => void;
 }
 
 export function ChatContainer({
@@ -39,8 +41,11 @@ export function ChatContainer({
   onToggleWorkspace,
   isWorkspaceOpen = true,
   onSelectMobileTab,
+  theme = "light",
+  onToggleTheme,
 }: ChatContainerProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const isLight = theme === "light";
 
   // Auto-scroll on new messages or interrupt
   useEffect(() => {
@@ -50,29 +55,49 @@ export function ChatContainer({
   }, [messages, pending, hitlInterrupt]);
 
   return (
-    <div className="flex h-screen flex-1 flex-col bg-[#090a0f] overflow-hidden">
+    <div
+      className={cn(
+        "flex h-screen flex-1 flex-col transition-colors duration-200 overflow-hidden",
+        isLight ? "bg-[#fdfaff]" : "bg-[#090a0f]"
+      )}
+    >
       {/* Top Navbar */}
-      <header className="flex h-16 shrink-0 items-center justify-between border-b border-zinc-800/80 px-4 bg-zinc-950/60 backdrop-blur-md z-10">
+      <header
+        className={cn(
+          "flex h-16 shrink-0 items-center justify-between border-b px-4 backdrop-blur-md z-10 transition-colors",
+          isLight
+            ? "border-pink-100/90 bg-white/80"
+            : "border-zinc-800/80 bg-zinc-950/60"
+        )}
+      >
         <div className="flex items-center gap-3 min-w-0">
           <Button
             variant="ghost"
             size="icon"
             onClick={onToggleSidebarMobile}
-            className="lg:hidden text-zinc-400 hover:text-white"
+            className={cn(
+              "lg:hidden",
+              isLight ? "text-slate-600 hover:text-slate-900" : "text-zinc-400 hover:text-white"
+            )}
           >
             <Menu className="h-5 w-5" />
           </Button>
 
           <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <h2 className="text-sm font-semibold text-zinc-100 truncate">
-                {activeThread?.title || "Select or start a chat"}
-              </h2>
-              <span className="rounded-full bg-indigo-500/15 border border-indigo-500/30 px-2 py-0.5 text-[10px] font-medium text-indigo-400 shrink-0">
-                LangGraph Hybrid RAG
-              </span>
-            </div>
-            <p className="text-[11px] text-zinc-400 truncate">
+            <h2
+              className={cn(
+                "text-sm font-semibold truncate",
+                isLight ? "text-slate-800" : "text-zinc-100"
+              )}
+            >
+              {activeThread?.title || "Select or start a chat"}
+            </h2>
+            <p
+              className={cn(
+                "text-[11px] truncate",
+                isLight ? "text-slate-500" : "text-zinc-400"
+              )}
+            >
               {documents.length > 0
                 ? `${documents.length} source document(s) attached`
                 : "No external sources attached"}
@@ -81,19 +106,65 @@ export function ChatContainer({
         </div>
 
         <div className="flex items-center gap-2">
+          {/* NexusAI Logo beside NexusAI Assistant — Conversational Workspace in top-right area */}
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl border transition-colors border-pink-100/90 dark:border-zinc-800 bg-white/70 dark:bg-zinc-900/60 shadow-xs">
+            <img
+              src="/nexus-logo.png"
+              alt="NexusAI Logo"
+              className="h-7 w-7 object-contain rounded-lg"
+            />
+            <div className="hidden sm:flex flex-col text-left">
+              <span className={cn("text-xs font-bold leading-tight", isLight ? "text-slate-800" : "text-zinc-100")}>
+                NexusAI Assistant
+              </span>
+              <span className={cn("text-[10px] leading-tight", isLight ? "text-slate-500" : "text-zinc-400")}>
+                Conversational Workspace
+              </span>
+            </div>
+          </div>
+
+          {/* Theme Toggle Button */}
+          {onToggleTheme && (
+            <button
+              type="button"
+              onClick={onToggleTheme}
+              aria-label="Toggle Theme"
+              className={cn(
+                "p-2 rounded-xl transition-all border",
+                isLight
+                  ? "bg-white border-pink-200/80 text-pink-600 hover:bg-pink-50 shadow-xs"
+                  : "bg-zinc-800/80 border-zinc-700 text-amber-300 hover:bg-zinc-700"
+              )}
+              title={isLight ? "Switch to Dark Theme" : "Switch to Light Theme"}
+            >
+              {isLight ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+            </button>
+          )}
+
           {onSelectMobileTab && (
-            <div className="flex lg:hidden rounded-lg bg-zinc-900 border border-zinc-800 p-0.5 text-xs">
+            <div
+              className={cn(
+                "flex lg:hidden rounded-lg p-0.5 text-xs border",
+                isLight ? "bg-pink-50 border-pink-100" : "bg-zinc-900 border-zinc-800"
+              )}
+            >
               <button
                 type="button"
                 onClick={() => onSelectMobileTab("chat")}
-                className="px-2.5 py-1 rounded-md font-medium text-white bg-zinc-800 shadow-sm"
+                className={cn(
+                  "px-2.5 py-1 rounded-md font-medium shadow-xs transition-colors",
+                  isLight ? "bg-white text-pink-600 font-semibold" : "bg-zinc-800 text-white"
+                )}
               >
                 Chat
               </button>
               <button
                 type="button"
                 onClick={() => onSelectMobileTab("sources")}
-                className="px-2.5 py-1 rounded-md text-zinc-400 hover:text-zinc-200"
+                className={cn(
+                  "px-2.5 py-1 rounded-md transition-colors",
+                  isLight ? "text-slate-600 hover:text-slate-900" : "text-zinc-400 hover:text-zinc-200"
+                )}
               >
                 Sources ({documents.length})
               </button>
@@ -106,15 +177,26 @@ export function ChatContainer({
               size="sm"
               onClick={onToggleWorkspace}
               className={cn(
-                "hidden lg:inline-flex text-xs gap-1.5 border-zinc-800 transition-colors",
-                isWorkspaceOpen
-                  ? "bg-indigo-600/20 border-indigo-500/40 text-indigo-300 hover:bg-indigo-600/30"
-                  : "bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300"
+                "hidden lg:inline-flex text-xs gap-1.5 transition-colors",
+                isLight
+                  ? isWorkspaceOpen
+                    ? "bg-pink-500/10 border-pink-300 text-pink-600 hover:bg-pink-500/20"
+                    : "bg-white border-pink-100 hover:bg-pink-50 text-slate-700"
+                  : isWorkspaceOpen
+                  ? "bg-pink-600/20 border-pink-500/40 text-pink-300 hover:bg-pink-600/30"
+                  : "bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300 border-zinc-800"
               )}
             >
-              <Layers className="h-3.5 w-3.5 text-indigo-400" />
+              <Layers className="h-3.5 w-3.5 text-pink-500" />
               <span>{isWorkspaceOpen ? "Sources Panel" : "Open Sources"}</span>
-              <span className="ml-1 rounded-full bg-zinc-800 px-1.5 py-0.2 text-[10px] text-zinc-300 border border-zinc-700/60">
+              <span
+                className={cn(
+                  "ml-1 rounded-full px-1.5 py-0.2 text-[10px] border",
+                  isLight
+                    ? "bg-pink-50 text-pink-700 border-pink-200"
+                    : "bg-zinc-800 text-zinc-300 border-zinc-700/60"
+                )}
+              >
                 {documents.length}
               </span>
             </Button>
@@ -125,9 +207,14 @@ export function ChatContainer({
               variant="outline"
               size="sm"
               onClick={onOpenSourceModal}
-              className="text-xs gap-1.5 border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300 hidden sm:inline-flex"
+              className={cn(
+                "text-xs gap-1.5 hidden sm:inline-flex transition-colors",
+                isLight
+                  ? "border-pink-200 bg-white hover:bg-pink-50 text-pink-600"
+                  : "border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300"
+              )}
             >
-              <BookOpen className="h-3.5 w-3.5 text-indigo-400" />
+              <BookOpen className="h-3.5 w-3.5 text-pink-500" />
               <span>Attach Sources</span>
             </Button>
           )}
@@ -137,66 +224,27 @@ export function ChatContainer({
       {/* Messages Scroll Area */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-2 py-4 space-y-3">
         {messages.length === 0 ? (
-          <div className="flex min-h-[70vh] flex-col items-center justify-center p-6 text-center max-w-xl mx-auto space-y-6">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-600/15 border border-indigo-500/30 text-indigo-400 shadow-xl shadow-indigo-950/50">
-              <Bot className="h-8 w-8" />
-            </div>
-
-            <div className="space-y-2">
-              <h3 className="text-xl font-bold text-zinc-100 tracking-tight">
+          <div className="flex min-h-[65vh] flex-col items-center justify-center p-6 text-center max-w-xl mx-auto space-y-3">
+            {/* Main Welcome Content */}
+            <div className="space-y-1.5">
+              <h3
+                className={cn(
+                  "text-2xl sm:text-3xl font-extrabold tracking-tight",
+                  isLight ? "text-slate-900" : "text-zinc-100"
+                )}
+              >
                 How can NexusAI assist you today?
               </h3>
-              <p className="text-xs text-zinc-400 leading-relaxed max-w-md mx-auto">
-                Grounded conversational intelligence with multi-document PDF retrieval, YouTube video transcripts, web search fallback (CRAG), and durable memory.
+
+              {/* Subtle Example Prompt as simple text */}
+              <p
+                className={cn(
+                  "text-sm font-normal tracking-normal select-none pt-1",
+                  isLight ? "text-slate-500" : "text-zinc-400"
+                )}
+              >
+                What’s on today’s agenda?
               </p>
-            </div>
-
-            {/* Quick Prompt Starters */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 w-full pt-2">
-              <button
-                onClick={() =>
-                  onSendMessage("What are the primary findings and conclusions of the attached document?")
-                }
-                className="flex flex-col items-start gap-1 p-3 rounded-xl border border-zinc-800/80 bg-zinc-900/40 hover:bg-zinc-850 hover:border-zinc-700/80 transition-all text-left group"
-              >
-                <div className="flex items-center gap-1.5 text-xs font-medium text-zinc-200">
-                  <FileText className="h-3.5 w-3.5 text-rose-400" />
-                  <span>Analyze PDF</span>
-                </div>
-                <p className="text-[11px] text-zinc-400 line-clamp-2">
-                  Extract findings, tables, and page citations.
-                </p>
-              </button>
-
-              <button
-                onClick={() =>
-                  onSendMessage("Can you summarize the main themes of the linked YouTube video?")
-                }
-                className="flex flex-col items-start gap-1 p-3 rounded-xl border border-zinc-800/80 bg-zinc-900/40 hover:bg-zinc-850 hover:border-zinc-700/80 transition-all text-left group"
-              >
-                <div className="flex items-center gap-1.5 text-xs font-medium text-zinc-200">
-                  <Youtube className="h-3.5 w-3.5 text-red-500" />
-                  <span>Video Summary</span>
-                </div>
-                <p className="text-[11px] text-zinc-400 line-clamp-2">
-                  Retrieve key takeaways from the video transcript.
-                </p>
-              </button>
-
-              <button
-                onClick={() =>
-                  onSendMessage("Search and verify current state-of-the-art developments in AI agent graphs.")
-                }
-                className="flex flex-col items-start gap-1 p-3 rounded-xl border border-zinc-800/80 bg-zinc-900/40 hover:bg-zinc-850 hover:border-zinc-700/80 transition-all text-left group"
-              >
-                <div className="flex items-center gap-1.5 text-xs font-medium text-zinc-200">
-                  <Globe className="h-3.5 w-3.5 text-blue-400" />
-                  <span>CRAG Search</span>
-                </div>
-                <p className="text-[11px] text-zinc-400 line-clamp-2">
-                  Evaluate grounded sources with web search approval.
-                </p>
-              </button>
             </div>
           </div>
         ) : (
@@ -207,6 +255,7 @@ export function ChatContainer({
                 message={msg}
                 threadId={activeThread?.thread_id}
                 onViewPdf={onViewPdf}
+                theme={theme}
               />
             ))}
 
@@ -219,6 +268,7 @@ export function ChatContainer({
                 }}
                 threadId={activeThread?.thread_id}
                 onViewPdf={onViewPdf}
+                theme={theme}
               />
             )}
           </div>
@@ -236,14 +286,22 @@ export function ChatContainer({
       </div>
 
       {/* Composer Footer */}
-      <footer className="shrink-0 bg-gradient-to-t from-[#090a0f] via-[#090a0f]/95 to-transparent pb-2">
+      <footer
+        className={cn(
+          "shrink-0 pb-2 transition-colors",
+          isLight
+            ? "bg-gradient-to-t from-[#fdfaff] via-[#fdfaff]/95 to-transparent"
+            : "bg-gradient-to-t from-[#090a0f] via-[#090a0f]/95 to-transparent"
+        )}
+      >
         <ChatComposer
           onSendMessage={onSendMessage}
           disabled={pending || !!hitlInterrupt}
           onOpenSourceModal={onOpenSourceModal}
+          placeholder="Ask NexusAI"
+          theme={theme}
         />
       </footer>
     </div>
   );
 }
-

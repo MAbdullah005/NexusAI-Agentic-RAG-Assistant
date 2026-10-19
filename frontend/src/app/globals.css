@@ -3,13 +3,36 @@
 @tailwind utilities;
 
 :root {
+  --background: #fdfaff;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
+  --primary: #ec4899;
+  --primary-foreground: #ffffff;
+  --secondary: #fce7f3;
+  --secondary-foreground: #831843;
+  --muted: #f8fafc;
+  --muted-foreground: #64748b;
+  --accent: #fdf2f8;
+  --accent-foreground: #db2777;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: #f1e6f5;
+  --input: #fdf4f9;
+  --ring: #ec4899;
+  --radius: 0.75rem;
+}
+
+.dark {
   --background: #090a0f;
   --foreground: #f4f4f5;
   --card: #111218;
   --card-foreground: #f4f4f5;
   --popover: #111218;
   --popover-foreground: #f4f4f5;
-  --primary: #6366f1;
+  --primary: #ec4899;
   --primary-foreground: #ffffff;
   --secondary: #1f212d;
   --secondary-foreground: #e4e4e7;
@@ -21,8 +44,7 @@
   --destructive-foreground: #ffffff;
   --border: #222533;
   --input: #181922;
-  --ring: #6366f1;
-  --radius: 0.5rem;
+  --ring: #ec4899;
 }
 
 body {
@@ -43,11 +65,19 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #272a3a;
+  background: #f472b6;
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
+  background: #ec4899;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #272a3a;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
   background: #3b3f55;
 }
 
@@ -56,4 +86,3 @@ pre code {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   font-size: 0.875rem;
 }
-
