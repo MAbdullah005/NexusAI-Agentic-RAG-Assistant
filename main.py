@@ -16,10 +16,11 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import router as api_router
 from app.auth.routes import router as auth_router
+from app.repocore.main import router as repo_router
 
 
 app = FastAPI(
-    title="RAG Chatbot API"
+    title="NexusAI & RepoGuide API"
 )
 
 # Enable CORS for Next.js frontend (default port 3000) and legacy Streamlit (8501)
@@ -43,3 +44,6 @@ app.include_router(api_router)
 
 # Authentication APIs
 app.include_router(auth_router)
+
+# RepoGuide GitHub Repository & Q&A APIs
+app.include_router(repo_router)

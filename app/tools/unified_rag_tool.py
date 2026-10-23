@@ -34,6 +34,7 @@ def unified_rag_tool(
     - resumes & documents
     - YouTube videos & transcripts
     - Web articles & blog URLs
+    - GitHub repositories & codebases
 
     This tool searches across the active documents attached to the
     current thread and does not restrict retrieval to one
@@ -85,7 +86,6 @@ def unified_rag_tool(
                 "for this thread."
             )
 
-
         docs = retriever.invoke(query)
 
         print(
@@ -94,12 +94,10 @@ def unified_rag_tool(
         )
 
         if not docs:
-
             return (
                 "❌ No relevant information "
                 "found in the uploaded documents."
             )
-
 
         top_k = get_rag_top_k()
         context_parts = []
@@ -108,7 +106,6 @@ def unified_rag_tool(
             docs[:top_k],
             start=1
         ):
-
             metadata = doc.metadata or {}
             doc_id = metadata.get(
                 "doc_id",
@@ -148,6 +145,26 @@ URL: {source_url}
 Document ID: {doc_id}
 Chunk ID: {chunk_id}"""
 
+            elif doc_type in ("github", "repo"):
+                file_path = metadata.get("file_path", "")
+                start_line = metadata.get("start_line", "")
+                end_line = metadata.get("end_line", "")
+                commit_sha = metadata.get("commit_sha", "")
+                github_url = metadata.get("github_url", source)
+                source_link = metadata.get("source_link") or (
+                    f"{github_url}/blob/{commit_sha}/{file_path}#L{start_line}-L{end_line}"
+                    if commit_sha and file_path else github_url
+                )
+                display_name = filename or github_url
+                line_info = f" (lines {start_line}-{end_line})" if start_line and end_line else ""
+                header = f"""--- Retrieved Chunk {i} ---
+Type: GitHub Repository Code
+Repository: {display_name}
+File: {file_path}{line_info}
+Source Link: {source_link}
+Document ID: {doc_id}
+Chunk ID: {chunk_id}"""
+
             else:
                 display_name = filename or (os.path.basename(source) if source != "unknown" else doc_id)
                 page_line = f"\nPage: {page}" if page is not None else ""
@@ -172,7 +189,7 @@ Content:
         logger.info(f"[RAG] Successfully compiled {len(context_parts)} context chunk(s) for query: {query[:80]}")
 
         return f"Retrieved source context:\n\n{context}"
-    
+
     except Exception as e:
         logger.error(f"[RAG] Unified RAG tool error: {e}", exc_info=True)
         return (

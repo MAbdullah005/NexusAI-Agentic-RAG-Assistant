@@ -1,32 +1,32 @@
 from datetime import datetime, timedelta, timezone
 import secrets
 import hashlib
+from typing import Dict, Any
 
-from fastapi import APIRouter, HTTPException, status,Depends
+from fastapi import APIRouter, HTTPException, status, Depends
+from sqlalchemy.orm import Session
 
-import sqlite3
 from app.auth.security import hash_password, verify_password
-import os
 from app.auth.jwt_utils import create_access_token
 from app.auth.dependencies import get_current_user
-from app.schemas.auth_schema import (SignupRequest,LoginRequest,
-                               TokenResponse,ForgotPasswordRequest
-                               ,ResetPasswordRequest)
-from app.auth.email_service import (send_reset_email,
-                                    send_verification_email)
-
+from app.schemas.auth_schema import (
+    SignupRequest,
+    LoginRequest,
+    TokenResponse,
+    ForgotPasswordRequest,
+    ResetPasswordRequest,
+)
+from app.auth.email_service import (
+    send_reset_email,
+    send_verification_email,
+)
+from app.db.session import get_db
+from app.db.models import User, PasswordReset, EmailVerification, utc_now
 
 router = APIRouter(
     prefix="/auth",
-    tags=["Authentication"]
+    tags=["Authentication"],
 )
-
-
-DB_DIR = "database"
-DB_PATH = os.path.join(DB_DIR, "chatbot_conv.db")
-
-conn = sqlite3.connect(DB_PATH, check_same_thread=False)
-
 
 
 # ============================================================
@@ -34,89 +34,51 @@ conn = sqlite3.connect(DB_PATH, check_same_thread=False)
 # ============================================================
 
 @router.post("/signup")
-async def signup(data: SignupRequest):
-
+async def signup(data: SignupRequest, db: Session = Depends(get_db)):
     email = data.email.strip().lower()
 
-    cursor = conn.cursor()
-
-    # Check existing user
-    cursor.execute(
-        """
-        SELECT user_id
-        FROM users
-        WHERE email = ?
-        """,
-        (email,)
-    )
-
-    existing_user = cursor.fetchone()
-
+    existing_user = db.query(User).filter(User.email == email).first()
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email is already registered"
+            detail="Email is already registered",
         )
 
     # Hash password
-    password_hash = hash_password(data.password)
+    pwd_hash = hash_password(data.password)
+
+    # Base username on email prefix
+    username_candidate = email.split("@")[0]
+    existing_username = db.query(User).filter(User.username == username_candidate).first()
+    username = username_candidate if not existing_username else f"{username_candidate}_{secrets.token_hex(2)}"
 
     # Create unverified user
-    cursor.execute(
-        """
-        INSERT INTO users (
-            email,
-            password_hash,
-            is_verified
-        )
-        VALUES (?, ?, ?)
-        """,
-        (
-            email,
-            password_hash,
-            0
-        )
+    user = User(
+        email=email,
+        username=username,
+        password_hash=pwd_hash,
+        is_verified=False,
+        created_at=utc_now(),
     )
-
-    user_id = cursor.lastrowid
+    db.add(user)
+    db.flush()
 
     # Generate verification token
     token = secrets.token_urlsafe(32)
+    token_h = hashlib.sha256(token.encode()).hexdigest()
+    expires_at = utc_now() + timedelta(minutes=15)
 
-    # Store only token hash
-    token_hash = hashlib.sha256(
-        token.encode()
-    ).hexdigest()
-
-    expires_at = (
-        datetime.now(timezone.utc)
-        + timedelta(minutes=15)
+    ev = EmailVerification(
+        user_id=user.id,
+        token_hash=token_h,
+        expires_at=expires_at,
+        created_at=utc_now(),
     )
+    db.add(ev)
+    db.commit()
 
-    # Store verification token
-    cursor.execute(
-        """
-        INSERT INTO email_verifications (
-            user_id,
-            token_hash,
-            expires_at
-        )
-        VALUES (?, ?, ?)
-        """,
-        (
-            user_id,
-            token_hash,
-            expires_at.isoformat()
-        )
-    )
-
-    conn.commit()
-
-    # Send actual token by email
-    await send_verification_email(
-        email,
-        token
-    )
+    # Send verification token by email
+    await send_verification_email(email, token)
 
     return {
         "message": (
@@ -125,81 +87,45 @@ async def signup(data: SignupRequest):
         )
     }
 
+
 # ============================================================
 # LOGIN
 # ============================================================
 
 @router.post("/login", response_model=TokenResponse)
-def login(data: LoginRequest):
-
+def login(data: LoginRequest, db: Session = Depends(get_db)):
     email = data.email.strip().lower()
 
-    cursor = conn.cursor()
-
-    cursor.execute(
-        """
-        SELECT
-            user_id,
-            email,
-            password_hash,
-            is_verified
-        FROM users
-        WHERE email = ?
-        """,
-        (email,)
-    )
-
-    user = cursor.fetchone()
+    user = db.query(User).filter(User.email == email).first()
 
     # Don't reveal whether email exists
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password",
-            headers={
-                "WWW-Authenticate": "Bearer"
-            }
+            headers={"WWW-Authenticate": "Bearer"},
         )
 
-    user_id = user[0]
-    password_hash = user[2]
-    is_verified = bool(user[3])
-
-    if not is_verified:
-      raise HTTPException(
-        status_code=status.HTTP_403_FORBIDDEN,
-        detail="Please verify your email before logging in"
-    )
+    if not user.is_verified:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Please verify your email before logging in",
+        )
 
     # Verify password
-    if not verify_password(
-        data.password,
-        password_hash
-    ):
+    if not verify_password(data.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password",
-            headers={
-                "WWW-Authenticate": "Bearer"
-            }
+            headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # For now, signup marks the account verified.
-    # If you add email verification later,
-    # this check can be enabled.
-    #
-    # if not is_verified:
-    #     raise HTTPException(
-    #         status_code=status.HTTP_403_FORBIDDEN,
-    #         detail="Please verify your email first"
-    #     )
-
     # Create JWT
-    access_token = create_access_token(user_id)
+    access_token = create_access_token(user.id)
 
     return {
         "access_token": access_token,
-        "token_type": "bearer"
+        "token_type": "bearer",
     }
 
 
@@ -208,14 +134,13 @@ def login(data: LoginRequest):
 # ============================================================
 
 @router.get("/me")
-def get_me(
-    current_user: dict = Depends(get_current_user)
-):
+def get_me(current_user: dict = Depends(get_current_user)):
     return {
         "user_id": current_user["user_id"],
         "email": current_user["email"],
+        "username": current_user.get("username"),
         "is_verified": current_user["is_verified"],
-        "created_at": current_user["created_at"]
+        "created_at": current_user["created_at"],
     }
 
 
@@ -224,24 +149,10 @@ def get_me(
 # ============================================================
 
 @router.post("/forgot-password")
-async def forgot_password(
-    data: ForgotPasswordRequest
-):
-
+async def forgot_password(data: ForgotPasswordRequest, db: Session = Depends(get_db)):
     email = data.email.strip().lower()
 
-    cursor = conn.cursor()
-
-    cursor.execute(
-        """
-        SELECT user_id, email
-        FROM users
-        WHERE email = ?
-        """,
-        (email,)
-    )
-
-    user = cursor.fetchone()
+    user = db.query(User).filter(User.email == email).first()
 
     # Don't reveal whether email exists
     if user is None:
@@ -252,53 +163,25 @@ async def forgot_password(
             )
         }
 
-    user_id = user[0]
-
     # Generate token
     token = secrets.token_urlsafe(32)
-
-    token_hash = hashlib.sha256(
-        token.encode()
-    ).hexdigest()
-
-    expires_at = (
-        datetime.now(timezone.utc)
-        + timedelta(minutes=15)
-    )
+    token_h = hashlib.sha256(token.encode()).hexdigest()
+    expires_at = utc_now() + timedelta(minutes=15)
 
     # Delete old reset tokens
-    cursor.execute(
-        """
-        DELETE FROM password_resets
-        WHERE user_id = ?
-        """,
-        (user_id,)
-    )
+    db.query(PasswordReset).filter(PasswordReset.user_id == user.id).delete()
 
-    # Store new token
-    cursor.execute(
-        """
-        INSERT INTO password_resets (
-            user_id,
-            token_hash,
-            expires_at
-        )
-        VALUES (?, ?, ?)
-        """,
-        (
-            user_id,
-            token_hash,
-            expires_at.isoformat()
-        )
+    reset_rec = PasswordReset(
+        user_id=user.id,
+        token_hash=token_h,
+        expires_at=expires_at,
+        created_at=utc_now(),
     )
-
-    conn.commit()
+    db.add(reset_rec)
+    db.commit()
 
     # Send reset email
-    await send_reset_email(
-        email,
-        token
-    )
+    await send_reset_email(email, token)
 
     return {
         "message": (
@@ -307,192 +190,83 @@ async def forgot_password(
         )
     }
 
-    # TO DO:
-    # Send `token` to user's email.
-    #
-    # Example:
-    #
-    # reset_link = f"http://localhost:8501/reset-password?token={token}"
-    #
-    # await send_reset_email(
-    #     email,
-    #     reset_link
-    # )
-
-   # return {
-   #     "message": "If the email exists, a password reset link has been sent."
-   # }
-
 
 # ============================================================
 # RESET PASSWORD
 # ============================================================
 
 @router.post("/reset-password")
-def reset_password(
-    data: ResetPasswordRequest
-):
+def reset_password(data: ResetPasswordRequest, db: Session = Depends(get_db)):
+    token_h = hashlib.sha256(data.token.encode()).hexdigest()
 
-    token_hash = hashlib.sha256(
-        data.token.encode()
-    ).hexdigest()
-
-    cursor = conn.cursor()
-
-    cursor.execute(
-        """
-        SELECT
-            id,
-            user_id,
-            expires_at
-        FROM password_resets
-        WHERE token_hash = ?
-        """,
-        (token_hash,)
-    )
-
-    reset_record = cursor.fetchone()
+    reset_record = db.query(PasswordReset).filter(PasswordReset.token_hash == token_h).first()
 
     if reset_record is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid or expired reset token"
+            detail="Invalid or expired reset token",
         )
-
-    reset_id = reset_record[0]
-    user_id = reset_record[1]
-    expires_at = datetime.fromisoformat(
-        reset_record[2]
-    )
 
     # Check expiration
-    if expires_at < datetime.now(timezone.utc):
-
-        cursor.execute(
-            """
-            DELETE FROM password_resets
-            WHERE id = ?
-            """,
-            (reset_id,)
-        )
-
-        conn.commit()
-
+    if reset_record.expires_at < utc_now():
+        db.delete(reset_record)
+        db.commit()
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Reset token has expired"
+            detail="Reset token has expired",
         )
 
     # Hash new password
-    new_password_hash = hash_password(
-        data.new_password
-    )
+    new_password_hash = hash_password(data.new_password)
 
     # Update password
-    cursor.execute(
-        """
-        UPDATE users
-        SET password_hash = ?
-        WHERE user_id = ?
-        """,
-        (
-            new_password_hash,
-            user_id
-        )
-    )
+    user = db.query(User).filter(User.id == reset_record.user_id).first()
+    if user:
+        user.password_hash = new_password_hash
 
     # Delete token so it cannot be reused
-    cursor.execute(
-        """
-        DELETE FROM password_resets
-        WHERE id = ?
-        """,
-        (reset_id,)
-    )
-
-    conn.commit()
+    db.delete(reset_record)
+    db.commit()
 
     return {
-        "message": "Password reset successfully"
+        "message": "Password reset successfully",
     }
 
 
-
+# ============================================================
+# VERIFY EMAIL
+# ============================================================
 
 @router.get("/verify-email")
-def verify_email(
-    token: str
-):
+def verify_email(token: str, db: Session = Depends(get_db)):
+    token_h = hashlib.sha256(token.encode()).hexdigest()
 
-    token_hash = hashlib.sha256(
-        token.encode()
-    ).hexdigest()
-
-    cursor = conn.cursor()
-
-    cursor.execute(
-        """
-        SELECT
-            id,
-            user_id,
-            expires_at
-        FROM email_verifications
-        WHERE token_hash = ?
-        """,
-        (token_hash,)
-    )
-
-    record = cursor.fetchone()
+    record = db.query(EmailVerification).filter(EmailVerification.token_hash == token_h).first()
 
     if record is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid or expired verification token"
+            detail="Invalid or expired verification token",
         )
-
-    verification_id = record[0]
-    user_id = record[1]
-    expires_at = datetime.fromisoformat(record[2])
 
     # Check expiration
-    if expires_at < datetime.now(timezone.utc):
-
-        cursor.execute(
-            """
-            DELETE FROM email_verifications
-            WHERE id = ?
-            """,
-            (verification_id,)
-        )
-
-        conn.commit()
-
+    if record.expires_at < utc_now():
+        db.delete(record)
+        db.commit()
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Verification token has expired"
+            detail="Verification token has expired",
         )
 
     # Verify user
-    cursor.execute(
-        """
-        UPDATE users
-        SET is_verified = 1
-        WHERE user_id = ?
-        """,
-        (user_id,)
-    )
+    user = db.query(User).filter(User.id == record.user_id).first()
+    if user:
+        user.is_verified = True
 
     # Delete used token
-    cursor.execute(
-        """
-        DELETE FROM email_verifications
-        WHERE id = ?
-        """,
-        (verification_id,)
-    )
-
-    conn.commit()
+    db.delete(record)
+    db.commit()
 
     return {
-        "message": "Email verified successfully. You can now log in."
+        "message": "Email verified successfully. You can now log in.",
     }

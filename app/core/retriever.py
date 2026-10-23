@@ -6,12 +6,14 @@ import hashlib
 from typing import Dict, Any, List
 
 from langchain_community.vectorstores import FAISS
+from langchain_core.documents import Document
 from app.llm.embeddings import get_embeddings
-from app.memory.sqlite_memory import checkpointer
+from app.db.session import checkpointer
 from rank_bm25 import BM25Okapi
 from app.utils.logger import logger
 from app.memory.config import get_rag_top_k, get_rag_min_score
 from app.memory.historical_retriever import tokenize_text
+from app.db.connection_adapter import get_db_connection
 
 DB_PATH = "database/chatbot_conv.db"
 
@@ -49,7 +51,7 @@ def get_thread_retriever(
     print("Selected doc IDs:", selected_doc_ids)
 
     # DATABASE
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_db_connection()
     cursor = conn.cursor()
 
     try:
@@ -117,8 +119,25 @@ def get_thread_retriever(
     # LOAD ALL VECTORSTORES
 
     vectorstores = []
+    repo_retrievers = []
 
     for doc_id, path, filename, doc_source, doc_type in rows:
+        if doc_type in ("github", "repo"):
+            try:
+                from app.repocore.github import parse_github_url
+                info = parse_github_url(doc_source)
+                repo_retrievers.append(
+                    RepoRetriever(
+                        owner=info["owner"],
+                        repo_name=info["repo"],
+                        github_url=doc_source,
+                        doc_id=doc_id,
+                    )
+                )
+                print(f"[RETRIEVER] Loaded GitHub repo retriever: {info['owner']}/{info['repo']}")
+            except Exception as e:
+                print(f"[RETRIEVER] Failed to initialize RepoRetriever for {doc_source}: {e}")
+            continue
 
         print("\n" + "-" * 60)
         print("Loading document:")
@@ -181,44 +200,42 @@ def get_thread_retriever(
 
     print(
         f"\n[RETRIEVER] Successfully loaded "
-        f"{len(vectorstores)} vectorstore(s)"
+        f"{len(vectorstores)} vectorstore(s) and {len(repo_retrievers)} repo retriever(s)"
     )
 
-    if not vectorstores:
+    if not vectorstores and not repo_retrievers:
 
         print(
-            "❌ No vectorstores could be loaded."
+            "❌ No vectorstores or repo retrievers could be loaded."
         )
 
         return None
 
-    # SMART RETRIEVER
+    # BUILD COMBINED RETRIEVER (SMART + REPO)
 
-    try:
+    retrievers = []
+    if vectorstores:
+        try:
+            retrievers.append(SmartRetriever(vectorstores))
+        except Exception as e:
+            print(f"[RETRIEVER] SmartRetriever creation failed: {e}")
 
-        retriever = SmartRetriever(
-            vectorstores
-        )
+    if repo_retrievers:
+        retrievers.extend(repo_retrievers)
 
-    except Exception as e:
+    if not retrievers:
+        print("[RETRIEVER] No vectorstores or repo retrievers could be loaded.")
+        return None
 
-        print(
-            "❌ SmartRetriever creation failed"
-        )
-
-        import traceback
-        traceback.print_exc()
-
-        raise
+    if len(retrievers) == 1:
+        retriever = retrievers[0]
+    else:
+        retriever = CompositeRetriever(retrievers)
 
     # CACHE
-
     _THREAD_CACHE[cache_key] = retriever
 
-    print(
-        "[RETRIEVER] Retriever created successfully."
-    )
-
+    print("[RETRIEVER] Retriever created successfully.")
     print("=" * 80 + "\n")
 
     return retriever
@@ -244,7 +261,7 @@ def thread_has_document(thread_id: str) -> bool:
     """
     Check if thread has any documents in DB
     """
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_db_connection()
     cursor = conn.cursor()
 
     cursor.execute("""
@@ -279,7 +296,7 @@ def thread_document_metadata(thread_id: str, selected_doc_ids: list[str] | None 
     if not thread_id:
         return {}
 
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_db_connection()
     cursor = conn.cursor()
 
     try:
@@ -345,6 +362,106 @@ def thread_document_metadata(thread_id: str, selected_doc_ids: list[str] | None 
         "total_docs": len(sources),
         "sources": sources
     }
+
+
+class RepoRetriever:
+    """
+    Hybrid retriever for GitHub repositories indexed via RepoGuide.
+    Queries pgvector chunks with reciprocal rank fusion (vector + full-text search + filename match),
+    neighbor expansion, and Jina reranking.
+    """
+    def __init__(self, owner: str, repo_name: str, github_url: str, doc_id: str):
+        self.owner = owner
+        self.repo_name = repo_name
+        self.github_url = github_url
+        self.doc_id = doc_id
+
+    def invoke(self, query: str) -> List[Any]:
+        from langchain_core.documents import Document
+        try:
+            from app.repocore.rag import (
+                build_search_query, rrf_fuse, find_neighbors_sync,
+                MAX_RERANK
+            )
+            from app.repocore.vector_storage import (
+                query_chunks_sync, keyword_search_sync, match_file_paths_sync
+            )
+            from app.repocore.reranking import sync_rerank
+            from app.repocore.embeddings import embed_batch
+
+            search_query = build_search_query(query, None)
+            qvec = embed_batch([search_query])[0]
+
+            v_docs, v_metas, _ = query_chunks_sync(self.owner, self.repo_name, qvec, 10)
+            k_docs, k_metas = keyword_search_sync(self.owner, self.repo_name, search_query, 10)
+            f_docs, f_metas = match_file_paths_sync(self.owner, self.repo_name, search_query, 10)
+            docs, metas = rrf_fuse([(v_docs, v_metas), (k_docs, k_metas), (f_docs, f_metas)])
+            if not docs:
+                return []
+
+            n_docs, n_metas = find_neighbors_sync(metas, self.owner, self.repo_name)
+            docs = docs + n_docs
+            metas = metas + n_metas
+            seen = set()
+            deduped_docs, deduped_metas = [], []
+            for d, m in zip(docs, metas):
+                key = (m["file_path"], m["start_line"], m["end_line"])
+                if key in seen:
+                    continue
+                seen.add(key)
+                deduped_docs.append(d)
+                deduped_metas.append(m)
+            deduped_docs = deduped_docs[:MAX_RERANK]
+            deduped_metas = deduped_metas[:MAX_RERANK]
+            reranked = sync_rerank(query, deduped_docs, len(deduped_docs))
+            ordered_docs = [deduped_docs[i] for i, _ in reranked]
+            ordered_metas = [deduped_metas[i] for i, _ in reranked]
+            docs = ordered_docs[:8]
+            metas = ordered_metas[:8]
+
+            lc_docs = []
+            for d, m in zip(docs, metas):
+                c_sha = m.get("commit_sha", "main")
+                f_path = m.get("file_path", "")
+                s_line = m.get("start_line", 1)
+                e_line = m.get("end_line", 1)
+                source_link = f"{self.github_url}/blob/{c_sha}/{f_path}#L{s_line}-L{e_line}"
+                lc_docs.append(Document(
+                    page_content=d,
+                    metadata={
+                        "doc_id": self.doc_id,
+                        "type": "github",
+                        "source": self.github_url,
+                        "filename": f"{self.owner}/{self.repo_name}",
+                        "file_path": f_path,
+                        "start_line": s_line,
+                        "end_line": e_line,
+                        "commit_sha": c_sha,
+                        "source_link": source_link,
+                    }
+                ))
+            return lc_docs
+        except Exception as e:
+            logger.error(f"[REPO RETRIEVER] Retrieval error for {self.owner}/{self.repo_name}: {e}", exc_info=True)
+            return []
+
+
+class CompositeRetriever:
+    """Combines results from multiple retrievers (e.g. SmartRetriever for PDFs/Web + RepoRetriever for GitHub repos)."""
+    def __init__(self, retrievers: list):
+        self.retrievers = retrievers
+
+    def invoke(self, query: str) -> List[Any]:
+        combined_docs: List[Any] = []
+        for r in self.retrievers:
+            try:
+                res = r.invoke(query)
+                if res:
+                    combined_docs.extend(res)
+            except Exception as e:
+                logger.error(f"[COMPOSITE RETRIEVER] Sub-retriever error: {e}", exc_info=True)
+        return combined_docs
+
 
 class SmartRetriever:
     """

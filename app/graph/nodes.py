@@ -23,7 +23,8 @@ from app.prompts.chat import CHAT_SYSTEM_PROMPT
 from app.graph.tool_node import llm_with_tools
 
 from app.core.retriever import thread_document_metadata
-from app.memory.sqlite_memory import checkpointer, get_thread_summary, conn as db_conn
+from app.memory.postgres_memory import checkpointer, get_thread_summary
+from app.db.connection_adapter import get_db_connection
 from app.utils.logger import logger
 
 
@@ -54,9 +55,10 @@ def chat_node(state: ChatState, config=None):
     # If user_id not explicitly in config, look up the authentic thread owner
     if not user_id and thread_id:
         try:
-            cursor = db_conn.cursor()
-            cursor.execute("SELECT user_id FROM threads WHERE thread_id = ?", (thread_id,))
-            row = cursor.fetchone()
+            with get_db_connection() as _conn:
+                cursor = _conn.cursor()
+                cursor.execute("SELECT user_id FROM threads WHERE thread_id = ?", (thread_id,))
+                row = cursor.fetchone()
             if row:
                 user_id = row[0]
         except Exception as e:

@@ -1,118 +1,53 @@
-import os
-import sqlite3
-
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import JWTError
 
 from app.auth.jwt_utils import decode_access_token
-
-
-DB_DIR = "database"
-DB_PATH = os.path.join(DB_DIR, "chatbot_conv.db")
-
-
-conn = sqlite3.connect(
-    DB_PATH,
-    check_same_thread=False
-)
-
-
-# =================================
-# HTTP Bearer Authentication
-# =================================
+from app.db.session import SessionLocal
+from app.db.models import User
 
 security = HTTPBearer()
 
-
-# =================================
-# Get Current Authenticated User
-# =================================
 
 def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security)
 ):
     """
     Validate JWT access token and return
-    the authenticated user from SQLite.
+    the authenticated user from PostgreSQL.
     """
-
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
-        headers={
-            "WWW-Authenticate": "Bearer"
-        },
+        headers={"WWW-Authenticate": "Bearer"},
     )
 
-    # =================================
-    # Extract JWT token
-    # =================================
-
     token = credentials.credentials
-
-    # =================================
-    # Decode JWT
-    # =================================
-
     try:
-
         payload = decode_access_token(token)
-
-        user_id = payload.get("sub")
-
-        if user_id is None:
+        user_id_raw = payload.get("sub")
+        if user_id_raw is None:
             raise credentials_exception
-
-        user_id = int(user_id)
-
+        user_id = int(user_id_raw)
     except (JWTError, ValueError, TypeError):
-
         raise credentials_exception
-
-    # =================================
-    # Find User
-    # =================================
 
     try:
+        with SessionLocal() as session:
+            user = session.query(User).filter(User.id == user_id).first()
+            if user is None:
+                raise credentials_exception
 
-        cursor = conn.cursor()
-
-        cursor.execute(
-            """
-            SELECT
-                user_id,
-                email,
-                password_hash,
-                is_verified,
-                created_at
-            FROM users
-            WHERE user_id = ?
-            """,
-            (user_id,)
-        )
-
-        row = cursor.fetchone()
-
+            return {
+                "user_id": user.id,
+                "id": user.id,
+                "email": user.email,
+                "username": user.username,
+                "password_hash": user.password_hash,
+                "is_verified": bool(user.is_verified),
+                "created_at": user.created_at.isoformat() if user.created_at else None,
+            }
+    except HTTPException:
+        raise
     except Exception:
-
         raise credentials_exception
-
-    # =================================
-    # User doesn't exist
-    # =================================
-
-    if row is None:
-        raise credentials_exception
-
-    # =================================
-    # Return authenticated user
-    # =================================
-
-    return {
-        "user_id": row[0],
-        "email": row[1],
-        "password_hash": row[2],
-        "is_verified": bool(row[3]),
-        "created_at": row[4],
-    }

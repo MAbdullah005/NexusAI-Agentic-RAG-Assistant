@@ -13,8 +13,9 @@ IMPORTANT INSTRUCTIONS:
   * For PDF documents: [Document: filename.pdf, Page: X] (using the 1-indexed page number from the chunk header).
   * For YouTube videos: [YouTube: URL, Timestamp: MM:SS] (using the embedded timestamp markers like [02:15] in the transcript).
   * For Web articles: [Source: URL, Title: title]
+  * For GitHub Repositories: [file_path (lines X-Y)](source_link) (using the exact file path, line numbers, and GitHub source link from the chunk header). Never invent URLs or line numbers.
 - Whenever multiple documents or sources are involved, keep them clearly distinguished.
-- At the end of your response, include a brief "Sources & References" section listing all cited documents, pages, timestamps, and URLs.
+- At the end of your response, include a brief "Sources & References" section listing all cited documents, pages, timestamps, URLs, and GitHub source links.
 
 3. Formatting & Clarity:
 - Provide well-structured, clear Markdown formatting (bullet points, clear paragraphs, headers where helpful).

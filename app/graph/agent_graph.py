@@ -17,7 +17,7 @@ from app.graph.hitl import human_approval_node
 
 from langchain_core.messages import ToolMessage
 
-from app.memory.sqlite_memory import checkpointer
+from app.memory.postgres_memory import checkpointer
 from app.memory.stm import summarize_memory
 
 from app.utils.logger import get_logger

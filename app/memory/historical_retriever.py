@@ -28,9 +28,8 @@ from app.memory.config import (
     get_historical_rrf_k,
     get_historical_embedding_batch_size,
 )
-from app.memory.sqlite_memory import (
-    conn as default_conn,
-    verify_thread_ownership,
+from app.memory.postgres_memory import (
+        verify_thread_ownership,
     save_message_embedding,
     get_message_embeddings,
 )
@@ -163,7 +162,7 @@ def run_semantic_search(
     if client is None:
         return []
 
-    db = target_conn or default_conn
+    db = target_conn or None
     candidate_mids = [c["message_id"] for c in candidates]
 
     # Fetch cached embeddings from SQLite
@@ -283,7 +282,7 @@ def retrieve_historical_context(
     if not is_historical_retrieval_enabled():
         return []
 
-    db = target_conn or default_conn
+    db = target_conn or None
 
     # Enforce thread ownership and isolation
     if not verify_thread_ownership(thread_id, user_id, target_conn=db):
