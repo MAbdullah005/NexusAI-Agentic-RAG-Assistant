@@ -22,6 +22,7 @@ import {
   ChevronUp,
   Sun,
   Moon,
+  GitBranch,
 } from "lucide-react";
 import { api } from "../../lib/api/client";
 import { Button } from "../ui/button";
@@ -76,6 +77,10 @@ export function SourceWorkspace({
   const [webUrl, setWebUrl] = useState("");
   const [webLoading, setWebLoading] = useState(false);
   const [webStatus, setWebStatus] = useState<{ success?: string; error?: string } | null>(null);
+
+  const [repoUrl, setRepoUrl] = useState("");
+  const [repoLoading, setRepoLoading] = useState(false);
+  const [repoStatus, setRepoStatus] = useState<{ success?: string; error?: string } | null>(null);
 
   // Active preview PDF blob URL state
   const [previewBlobUrl, setPreviewBlobUrl] = useState<string | null>(null);
@@ -206,6 +211,38 @@ export function SourceWorkspace({
       setWebStatus({ error: err?.message || "Failed to scrape and index web URL." });
     } finally {
       setWebLoading(false);
+    }
+  };
+
+  // Handle GitHub Repo Indexing via RepoGuide
+  const handleUploadRepo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!threadId) {
+      setRepoStatus({ error: "Please select or create a conversation thread first." });
+      return;
+    }
+    if (!repoUrl.trim()) {
+      setRepoStatus({ error: "Please enter a valid GitHub repository URL." });
+      return;
+    }
+    if (!repoUrl.trim().startsWith("https://github.com/")) {
+      setRepoStatus({ error: "URL must begin with https://github.com/owner/repo" });
+      return;
+    }
+
+    try {
+      setRepoLoading(true);
+      setRepoStatus(null);
+      const res = await api.uploadRepo(repoUrl.trim(), threadId);
+      setRepoStatus({
+        success: res.message || `GitHub repository indexed (${res.file_count || 0} files)!`,
+      });
+      setRepoUrl("");
+      onSourceAdded();
+    } catch (err: any) {
+      setRepoStatus({ error: err?.message || "Failed to index GitHub repository." });
+    } finally {
+      setRepoLoading(false);
     }
   };
 
@@ -340,18 +377,22 @@ export function SourceWorkspace({
 
           {showIngestForm && (
             <Tabs value={ingestTab} onValueChange={setIngestTab}>
-              <TabsList className="grid w-full grid-cols-3 mb-3 bg-zinc-900/60">
-                <TabsTrigger value="pdf" className="flex items-center gap-1.5 text-xs py-1">
-                  <FileText className="h-3.5 w-3.5 text-rose-400" />
-                  <span>PDF Document</span>
+              <TabsList className="grid w-full grid-cols-4 mb-3 bg-zinc-900/60">
+                <TabsTrigger value="pdf" className="flex items-center gap-1 text-[11px] py-1">
+                  <FileText className="h-3 w-3 text-rose-400" />
+                  <span>PDF</span>
                 </TabsTrigger>
-                <TabsTrigger value="youtube" className="flex items-center gap-1.5 text-xs py-1">
-                  <Youtube className="h-3.5 w-3.5 text-red-500" />
-                  <span>YouTube Video</span>
+                <TabsTrigger value="youtube" className="flex items-center gap-1 text-[11px] py-1">
+                  <Youtube className="h-3 w-3 text-red-500" />
+                  <span>YouTube</span>
                 </TabsTrigger>
-                <TabsTrigger value="web" className="flex items-center gap-1.5 text-xs py-1">
-                  <Globe className="h-3.5 w-3.5 text-blue-400" />
-                  <span>Web Article</span>
+                <TabsTrigger value="web" className="flex items-center gap-1 text-[11px] py-1">
+                  <Globe className="h-3 w-3 text-blue-400" />
+                  <span>Web</span>
+                </TabsTrigger>
+                <TabsTrigger value="github" className="flex items-center gap-1 text-[11px] py-1">
+                  <GitBranch className="h-3 w-3 text-emerald-400" />
+                  <span>GitHub</span>
                 </TabsTrigger>
               </TabsList>
 
@@ -484,6 +525,46 @@ export function SourceWorkspace({
                   </p>
                 </form>
               </TabsContent>
+
+              {/* GitHub Repo Ingest Form */}
+              <TabsContent value="github" className="space-y-3 mt-0">
+                {repoStatus?.success && (
+                  <div className="flex items-center gap-2 p-2 text-xs rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-400">
+                    <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                    <span>{repoStatus.success}</span>
+                  </div>
+                )}
+                {repoStatus?.error && (
+                  <div className="flex items-center gap-2 p-2 text-xs rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-400">
+                    <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                    <span>{repoStatus.error}</span>
+                  </div>
+                )}
+
+                <form onSubmit={handleUploadRepo} className="space-y-2.5">
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="url"
+                      placeholder="https://github.com/owner/repository"
+                      value={repoUrl}
+                      onChange={(e) => setRepoUrl(e.target.value)}
+                      className="h-8 text-xs bg-zinc-950/80 border-zinc-800"
+                    />
+                    <Button
+                      type="submit"
+                      disabled={!repoUrl.trim() || repoLoading}
+                      isLoading={repoLoading}
+                      size="sm"
+                      className="h-8 shrink-0 bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-3"
+                    >
+                      Index Repo
+                    </Button>
+                  </div>
+                  <p className="text-[10px] text-zinc-500">
+                    RepoGuide will shallow-clone, chunk with line ranges, and embed vectors for code Q&A.
+                  </p>
+                </form>
+              </TabsContent>
             </Tabs>
           )}
         </div>
@@ -568,6 +649,7 @@ export function SourceWorkspace({
                       {doc.type === "pdf" && <FileText className="h-4 w-4 text-rose-400 shrink-0" />}
                       {doc.type === "youtube" && <Youtube className="h-4 w-4 text-red-500 shrink-0" />}
                       {doc.type === "web" && <Globe className="h-4 w-4 text-blue-400 shrink-0" />}
+                      {(doc.type === "github" || doc.type === "repo") && <GitBranch className="h-4 w-4 text-emerald-400 shrink-0" />}
 
                       <div className="min-w-0 flex-1">
                         <p className="text-zinc-200 font-medium truncate">
@@ -612,6 +694,7 @@ export function SourceWorkspace({
                 {activePreviewDoc.type === "pdf" && <FileText className="h-4 w-4 text-rose-400 shrink-0" />}
                 {activePreviewDoc.type === "youtube" && <Youtube className="h-4 w-4 text-red-500 shrink-0" />}
                 {activePreviewDoc.type === "web" && <Globe className="h-4 w-4 text-blue-400 shrink-0" />}
+                {(activePreviewDoc.type === "github" || activePreviewDoc.type === "repo") && <GitBranch className="h-4 w-4 text-emerald-400 shrink-0" />}
                 <span className="font-semibold text-zinc-100 truncate">
                   {activePreviewDoc.filename || activePreviewDoc.title || activePreviewDoc.source}
                   {previewPage ? ` (Page ${previewPage})` : ""}
@@ -687,6 +770,28 @@ export function SourceWorkspace({
                     className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors"
                   >
                     Open Page in Browser
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                </div>
+              )}
+
+              {!previewLoading && (activePreviewDoc.type === "github" || activePreviewDoc.type === "repo") && (
+                <div className="p-8 text-center space-y-3">
+                  <GitBranch className="h-10 w-10 text-emerald-400 mx-auto opacity-75" />
+                  <p className="text-xs text-zinc-300 font-semibold">{activePreviewDoc.filename || "GitHub Repository"}</p>
+                  <p className="text-[11px] text-zinc-400 max-w-sm mx-auto truncate font-mono">
+                    {activePreviewDoc.source}
+                  </p>
+                  <p className="text-[11px] text-zinc-500 max-w-sm mx-auto">
+                    Indexed with RepoGuide hybrid retrieval (pgvector + full-text search + filename matching). Ask questions in chat to query this codebase.
+                  </p>
+                  <a
+                    href={activePreviewDoc.source}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white transition-colors"
+                  >
+                    Open on GitHub
                     <ExternalLink className="h-3 w-3" />
                   </a>
                 </div>

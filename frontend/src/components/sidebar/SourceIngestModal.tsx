@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { FileText, Youtube, Globe, Upload, CheckCircle2, AlertCircle } from "lucide-react";
+import { FileText, Youtube, Globe, Upload, CheckCircle2, AlertCircle, GitBranch } from "lucide-react";
 import { api } from "../../lib/api/client";
 import { Dialog, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "../ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../ui/tabs";
@@ -41,6 +41,12 @@ export function SourceIngestModal({
   const [webSuccess, setWebSuccess] = useState<string | null>(null);
   const [webError, setWebError] = useState<string | null>(null);
 
+  // GitHub Repo state
+  const [repoUrl, setRepoUrl] = useState("");
+  const [repoLoading, setRepoLoading] = useState(false);
+  const [repoSuccess, setRepoSuccess] = useState<string | null>(null);
+  const [repoError, setRepoError] = useState<string | null>(null);
+
   const resetStates = () => {
     setSelectedFile(null);
     setPdfSuccess(null);
@@ -51,6 +57,9 @@ export function SourceIngestModal({
     setWebUrl("");
     setWebSuccess(null);
     setWebError(null);
+    setRepoUrl("");
+    setRepoSuccess(null);
+    setRepoError(null);
   };
 
   const handleUploadPdf = async (e: React.FormEvent) => {
@@ -119,6 +128,32 @@ export function SourceIngestModal({
     }
   };
 
+  const handleUploadRepo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!repoUrl.trim()) {
+      setRepoError("Please enter a valid GitHub repository URL.");
+      return;
+    }
+    if (!repoUrl.trim().startsWith("https://github.com/")) {
+      setRepoError("URL must begin with https://github.com/owner/repo");
+      return;
+    }
+
+    try {
+      setRepoLoading(true);
+      setRepoError(null);
+      setRepoSuccess(null);
+      const res = await api.uploadRepo(repoUrl.trim(), threadId);
+      setRepoSuccess(res.message || `GitHub repository indexed (${res.file_count || 0} files)!`);
+      setRepoUrl("");
+      onSourceAdded?.();
+    } catch (err: any) {
+      setRepoError(err?.message || "Failed to index GitHub repository.");
+    } finally {
+      setRepoLoading(false);
+    }
+  };
+
   return (
     <Dialog
       open={open}
@@ -135,18 +170,22 @@ export function SourceIngestModal({
       </DialogHeader>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3 mb-4">
-          <TabsTrigger value="pdf" className="flex items-center gap-1.5">
+        <TabsList className="grid w-full grid-cols-4 mb-4">
+          <TabsTrigger value="pdf" className="flex items-center gap-1 text-xs">
             <FileText className="h-3.5 w-3.5 text-rose-400" />
-            <span>PDF File</span>
+            <span>PDF</span>
           </TabsTrigger>
-          <TabsTrigger value="youtube" className="flex items-center gap-1.5">
+          <TabsTrigger value="youtube" className="flex items-center gap-1 text-xs">
             <Youtube className="h-3.5 w-3.5 text-red-500" />
             <span>YouTube</span>
           </TabsTrigger>
-          <TabsTrigger value="web" className="flex items-center gap-1.5">
+          <TabsTrigger value="web" className="flex items-center gap-1 text-xs">
             <Globe className="h-3.5 w-3.5 text-blue-400" />
-            <span>Web URL</span>
+            <span>Web</span>
+          </TabsTrigger>
+          <TabsTrigger value="github" className="flex items-center gap-1 text-xs">
+            <GitBranch className="h-3.5 w-3.5 text-emerald-400" />
+            <span>GitHub</span>
           </TabsTrigger>
         </TabsList>
 
@@ -292,8 +331,52 @@ export function SourceIngestModal({
             </DialogFooter>
           </form>
         </TabsContent>
+
+        {/* GITHUB REPO TAB */}
+        <TabsContent value="github">
+          <form onSubmit={handleUploadRepo} className="space-y-4">
+            {repoSuccess && (
+              <div className="flex items-center gap-2 p-3 text-xs rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-400">
+                <CheckCircle2 className="h-4 w-4 shrink-0" />
+                <span>{repoSuccess}</span>
+              </div>
+            )}
+            {repoError && (
+              <div className="flex items-center gap-2 p-3 text-xs rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-400">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <span>{repoError}</span>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-zinc-300" htmlFor="repo-url">
+                GitHub Repository URL
+              </label>
+              <Input
+                id="repo-url"
+                type="url"
+                placeholder="https://github.com/owner/repository"
+                value={repoUrl}
+                onChange={(e) => setRepoUrl(e.target.value)}
+              />
+              <p className="text-[11px] text-zinc-400">
+                RepoGuide will shallow-clone, filter source files, chunk with line-number metadata, and index vectors for hybrid code retrieval.
+              </p>
+            </div>
+
+            <DialogFooter>
+              <Button
+                type="submit"
+                disabled={!repoUrl.trim() || repoLoading}
+                isLoading={repoLoading}
+                className="w-full sm:w-auto"
+              >
+                Index Repository
+              </Button>
+            </DialogFooter>
+          </form>
+        </TabsContent>
       </Tabs>
     </Dialog>
   );
 }
-

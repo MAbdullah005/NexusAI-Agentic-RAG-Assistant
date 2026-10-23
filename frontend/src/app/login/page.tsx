@@ -462,8 +462,10 @@ export default function LoginPage() {
 
                 <Link
                   href="/forgot-password"
-                  className={`text-xs font-medium hover:underline transition-colors ${
-                    isDark ? "text-pink-400 hover:text-pink-300" : "text-slate-600 hover:text-pink-600"
+                  className={`text-xs font-semibold px-2.5 py-1 rounded-full transition-all border ${
+                    isDark
+                      ? "text-pink-300 hover:text-white bg-pink-500/15 border-pink-500/30 hover:bg-pink-500/25 hover:border-pink-500/50"
+                      : "text-pink-600 hover:text-pink-700 bg-pink-50 border-pink-200/90 hover:bg-pink-100 hover:border-pink-300 shadow-xs"
                   }`}
                 >
                   Forgot Password?

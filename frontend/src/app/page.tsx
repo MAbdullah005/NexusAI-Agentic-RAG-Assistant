@@ -85,19 +85,42 @@ export default function ChatPage() {
     if (!isAuthenticated) return;
     try {
       setLoadingThreads(true);
-      const threadList = await api.getThreads();
+      const rawThreads = await api.getThreads();
+      let threadList: Thread[] = (rawThreads || [])
+        .map((t: any) => ({
+          thread_id: String(t.thread_id || t.id || ""),
+          title: t.title || "New Chat",
+          created_at: t.created_at ? String(t.created_at) : new Date().toISOString(),
+        }))
+        .filter((t) => Boolean(t.thread_id));
+
+      if (threadList.length === 0) {
+        // Automatically create an initial conversation thread so activeThreadId is never null
+        const res = await api.createThread();
+        const newThreadId = res.thread_id;
+        const initialThread: Thread = {
+          thread_id: newThreadId,
+          title: "New Chat",
+          created_at: new Date().toISOString(),
+        };
+        threadList = [initialThread];
+      }
+
       setThreads(threadList);
 
-      // Auto-select first thread if none active
-      if (threadList.length > 0 && !activeThreadId) {
-        setActiveThreadId(threadList[0].thread_id);
-      }
+      // Auto-select first thread if none active, or preserve existing active thread if valid
+      setActiveThreadId((current) => {
+        if (current && threadList.some((t) => t.thread_id === current)) {
+          return current;
+        }
+        return threadList[0].thread_id;
+      });
     } catch (err) {
       console.error("Failed to load threads:", err);
     } finally {
       setLoadingThreads(false);
     }
-  }, [isAuthenticated, activeThreadId]);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -161,13 +184,14 @@ export default function ChatPage() {
     try {
       setCreatingThread(true);
       const res = await api.createThread();
+      const newThreadId = res.thread_id;
       const newThread: Thread = {
-        thread_id: res.thread_id,
+        thread_id: newThreadId,
         title: "New Chat",
         created_at: new Date().toISOString(),
       };
-      setThreads((prev) => [newThread, ...prev]);
-      setActiveThreadId(res.thread_id);
+      setThreads((prev) => [newThread, ...prev.filter((t) => t.thread_id !== newThreadId)]);
+      setActiveThreadId(newThreadId);
       setMessages([]);
       setDocuments([]);
       setSelectedDocIds([]);
@@ -190,14 +214,15 @@ export default function ChatPage() {
       try {
         setCreatingThread(true);
         const res = await api.createThread();
-        currentThreadId = res.thread_id;
+        const newThreadId = res.thread_id;
+        currentThreadId = newThreadId;
         const newThread: Thread = {
-          thread_id: res.thread_id,
+          thread_id: newThreadId,
           title: "New Chat",
           created_at: new Date().toISOString(),
         };
-        setThreads((prev) => [newThread, ...prev]);
-        setActiveThreadId(res.thread_id);
+        setThreads((prev) => [newThread, ...prev.filter((t) => t.thread_id !== newThreadId)]);
+        setActiveThreadId(newThreadId);
       } catch (err) {
         console.error("Failed to create thread before sending message:", err);
         return;

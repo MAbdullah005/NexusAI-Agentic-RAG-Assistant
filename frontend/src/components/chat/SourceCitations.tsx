@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
-import { FileText, Youtube, Globe, ExternalLink, ChevronDown, ChevronUp, BookOpen } from "lucide-react";
+import { FileText, Youtube, Globe, ExternalLink, ChevronDown, ChevronUp, BookOpen, GitBranch } from "lucide-react";
 
 export interface CitationItem {
-  type: "pdf" | "youtube" | "web" | "general";
+  type: "pdf" | "youtube" | "web" | "general" | "github";
   title: string;
   detail?: string;
   url?: string;
@@ -69,18 +69,69 @@ export function extractCitations(text: string): CitationItem[] {
     }
   }
 
-  // Pattern 4: Web Markdown links [Title](https://...)
+  // Pattern 4: GitHub Markdown links [file_path (lines X-Y)](https://github.com/...)
+  const githubLinkRegex = /\[([^\]]+)\]\((https?:\/\/github\.com\/[^\s\)]+)\)/gi;
+  while ((match = githubLinkRegex.exec(text)) !== null) {
+    const key = `github:${match[2]}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      const url = match[2];
+      const lineMatch = url.match(/#L(\d+)(?:-L(\d+))?/i);
+      let detail = "GitHub Source";
+      if (lineMatch) {
+        detail = lineMatch[2] ? `Lines ${lineMatch[1]}–${lineMatch[2]}` : `Line ${lineMatch[1]}`;
+      }
+      citations.push({
+        type: "github",
+        title: match[1].trim(),
+        url: url,
+        detail: detail,
+      });
+    }
+  }
+
+  // Pattern 5: Raw GitHub blob URLs with lines
+  const rawGithubRegex = /(https?:\/\/github\.com\/[^\s\)]+\/blob\/[^\s\)]+#L\d+(?:-L\d+)?)/gi;
+  while ((match = rawGithubRegex.exec(text)) !== null) {
+    const url = match[1];
+    const key = `github:${url}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      const parts = url.split("/blob/")[1]?.split("#") || [];
+      const filePath = parts[0] || "Code Source";
+      const lineHash = parts[1] || "";
+      const lineMatch = lineHash.match(/L(\d+)(?:-L(\d+))?/i);
+      let detail = "GitHub Source";
+      if (lineMatch) {
+        detail = lineMatch[2] ? `Lines ${lineMatch[1]}–${lineMatch[2]}` : `Line ${lineMatch[1]}`;
+      }
+      citations.push({
+        type: "github",
+        title: filePath,
+        url: url,
+        detail: detail,
+      });
+    }
+  }
+
+  // Pattern 6: Web Markdown links [Title](https://...)
   const webLinkRegex = /\[([^\]]+)\]\((https?:\/\/[^\s\)]+)\)/gi;
   while ((match = webLinkRegex.exec(text)) !== null) {
-    if (!match[2].includes("youtube.com") && !match[2].includes("youtu.be")) {
+    if (!match[2].includes("youtube.com") && !match[2].includes("youtu.be") && !match[2].includes("github.com")) {
       const key = `web:${match[2]}`;
       if (!seen.has(key)) {
         seen.add(key);
+        let detail = "Web Source";
+        try {
+          detail = new URL(match[2]).hostname;
+        } catch {
+          // ignore invalid URL
+        }
         citations.push({
           type: "web",
           title: match[1],
           url: match[2],
-          detail: new URL(match[2]).hostname,
+          detail: detail,
         });
       }
     }
@@ -126,6 +177,9 @@ export function SourceCitations({ content, threadId, onViewPdf }: SourceCitation
                 )}
                 {item.type === "web" && (
                   <Globe className="h-4 w-4 shrink-0 text-blue-400" />
+                )}
+                {item.type === "github" && (
+                  <GitBranch className="h-4 w-4 shrink-0 text-emerald-400" />
                 )}
                 <div className="min-w-0">
                   <p className="truncate font-medium text-zinc-200">{item.title}</p>

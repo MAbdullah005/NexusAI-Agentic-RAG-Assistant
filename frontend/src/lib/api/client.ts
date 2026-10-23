@@ -20,6 +20,7 @@ import type {
   ThreadPdfsResponse,
   UploadPdfResponse,
   UploadUrlResponse,
+  UploadRepoResponse,
 } from "../../types/document";
 
 const API_BASE_URL =
@@ -207,6 +208,30 @@ export const api = {
     });
   },
 
+  async uploadRepo(url: string, threadId: string): Promise<UploadRepoResponse> {
+    return request<UploadRepoResponse>("/upload-repo", {
+      method: "POST",
+      body: JSON.stringify({
+        url,
+        thread_id: threadId,
+      }),
+    });
+  },
+
+  async indexRepo(url: string, threadId?: string): Promise<UploadRepoResponse> {
+    return request<UploadRepoResponse>("/index", {
+      method: "POST",
+      body: JSON.stringify({
+        url,
+        thread_id: threadId,
+      }),
+    });
+  },
+
+  async getRepositories(): Promise<any[]> {
+    return request<any[]>("/api/repositories");
+  },
+
   async getThreadDocuments(threadId: string): Promise<{ thread_id: string; documents: any[] }> {
     return request<{ thread_id: string; documents: any[] }>(
       `/thread/${encodeURIComponent(threadId)}/documents`
@@ -236,4 +261,3 @@ export const api = {
     return `${API_BASE_URL}/get_pdf/${encodeURIComponent(threadId)}/${encodeURIComponent(docId)}`;
   },
 };
-

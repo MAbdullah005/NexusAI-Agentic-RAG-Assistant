@@ -26,3 +26,12 @@ export interface SetYoutubeResponse {
   doc_id: string;
 }
 
+export interface UploadRepoResponse {
+  status: string;
+  doc_id: string;
+  url: string;
+  filename?: string;
+  file_count?: number;
+  commit_sha?: string;
+  message?: string;
+}
