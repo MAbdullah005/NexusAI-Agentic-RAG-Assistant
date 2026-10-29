@@ -83,11 +83,15 @@ USER QUESTION:
 INSTRUCTIONS:
 1. Ground your answer strictly in the retrieved source context above.
 2. If the context does not contain enough information to answer the question, clearly state: "The provided sources do not contain enough information to answer this question."
-3. Cite sources directly inline where relevant using these exact formats:
+3. Cite sources inline using MINIMAL, GROUPED citations:
+   - Place ONE citation at the end of each paragraph or grouped bullet section — not after every sentence.
+   - If several facts in the same paragraph come from the same chunk, cite that source ONCE at the end of the group.
+   - For GitHub chunks: each chunk header contains a "Citation Label" (e.g. [Source 1]) and a "Source Link" URL. Use exactly [Source N](URL) — copy the label and URL from the header. Reuse the same [Source N] label anywhere the same file and line range is cited again.
    - For PDF documents: [Document: filename.pdf, Page: X]
    - For YouTube videos: [YouTube: URL, Timestamp: MM:SS]
    - For Web articles: [Source: URL, Title: title]
-4. At the end of your response, include a brief "Sources & References" section listing all cited materials.
+   - Never repeat the same citation for the same claim. Never cite requirements.txt when implementation code is available.
+4. Do NOT add a "Sources & References" section at the end — inline citations are sufficient.
 5. Do not speculate or use ungrounded external assumptions for document-specific claims."""
 
     messages.append(HumanMessage(content=prompt_payload))

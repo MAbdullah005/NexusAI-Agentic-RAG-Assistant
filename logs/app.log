@@ -520,3 +520,601 @@ Traceback (most recent call last):
   File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\google\genai\errors.py", line 184, in raise_error
     raise ClientError(status_code, response_json, response)
 google.genai.errors.ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. ', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}]}}
+2026-10-23 10:00:47,578 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-10-23 10:00:56,056 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-10-23 10:00:56,119 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-10-23 10:00:56,152 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-10-23 10:01:26,433 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-10-23 10:01:34,135 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-10-23 10:01:34,135 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-10-23 10:01:34,136 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-10-23 10:07:35,437 | ERROR | req:N/A | app.api.routes | [UPLOAD REPO] Failed to index repository https://github.com/MAbdullah005/SonarPredication: No filterable file found in this repo
+Traceback (most recent call last):
+  File "E:\work\projects\langgraph_chatbot\app\api\routes.py", line 467, in upload_repo
+    result = await index_repo(url)
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "E:\work\projects\langgraph_chatbot\app\repocore\rag.py", line 94, in index_repo
+    raise ValueError("No filterable file found in this repo")
+ValueError: No filterable file found in this repo
+2026-10-23 10:16:15,095 | WARNING | req:N/A | AI-Agent | Historical context retrieval failed in chat_node: 'NoneType' object has no attribute 'cursor'
+2026-10-23 10:16:15,099 | INFO | req:N/A | AI-Agent | [CHAT NODE] Calling LLM with 2 messages (thread_id=f9fc5b16-5806-4bc2-b253-10990a6ca10b)
+2026-10-23 10:16:15,100 | INFO | req:N/A | app.llm.llm_config | Trying LLM provider: Gemini
+2026-10-23 10:16:18,540 | INFO | req:N/A | app.llm.llm_config | Initialized LLM provider: Gemini
+2026-10-23 10:16:18,540 | INFO | req:N/A | app.llm.llm_config | Binding tools to Gemini
+2026-10-23 10:16:20,433 | INFO | req:N/A | app.llm.llm_config | LLM request succeeded using Gemini
+2026-10-23 10:16:20,460 | INFO | req:N/A | AI-Agent | [CHAT NODE] LLM with tools responded: type=<class 'langchain_core.messages.ai.AIMessage'>
+2026-10-23 10:16:20,463 | INFO | req:N/A | app.graph.agent_graph | [ROUTER] LLM requested tool -> tools
+2026-10-23 10:16:20,576 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-10-23 10:16:26,316 | INFO | req:N/A | AI-Agent | [RAG] Successfully compiled 6 context chunk(s) for query: speech to text model
+2026-10-23 10:16:26,366 | INFO | req:N/A | app.graph.agent_graph | [ROUTER] Tool executed: unified_rag_tool
+2026-10-23 10:16:26,501 | INFO | req:N/A | app.graph.agent_graph | [ROUTER] RAG tool detected -> CRAG grader
+2026-10-23 10:16:26,607 | INFO | req:N/A | app.graph.crag_grader | [CRAG GRADER] Evaluating retrieved context for user question: what model i use in this for spech to text viode
+2026-10-23 10:16:26,627 | INFO | req:N/A | app.llm.llm_config | Trying LLM provider: Gemini
+2026-10-23 10:16:30,510 | INFO | req:N/A | app.llm.llm_config | Initialized LLM provider: Gemini
+2026-10-23 10:16:35,680 | INFO | req:N/A | app.llm.llm_config | LLM request succeeded using Gemini
+2026-10-23 10:16:35,762 | INFO | req:N/A | app.graph.crag_grader | [CRAG] Raw LLM response: 'GOOD'
+2026-10-23 10:16:35,828 | INFO | req:N/A | app.graph.crag_grader | [CRAG] Evaluation complete -> Grade: GOOD
+2026-10-23 10:16:35,895 | INFO | req:N/A | app.graph.agent_graph | [CRAG ROUTER] Grade received: GOOD
+2026-10-23 10:16:35,913 | INFO | req:N/A | app.graph.agent_graph | [CRAG ROUTER] GOOD -> final_answer
+2026-10-23 10:16:36,021 | INFO | req:N/A | app.llm.llm_config | Trying LLM provider: Gemini
+2026-10-23 10:16:42,872 | INFO | req:N/A | app.llm.llm_config | Initialized LLM provider: Gemini
+2026-10-23 10:16:52,564 | INFO | req:N/A | app.llm.llm_config | LLM request succeeded using Gemini
+2026-10-23 10:16:52,582 | INFO | req:N/A | app.graph.agent_graph | [MEMORY] Current message count: 2 (threshold: 12)
+2026-10-23 10:16:52,584 | INFO | req:N/A | app.graph.agent_graph | [MEMORY] Conversation size OK -> END
+2026-10-23 10:16:52,765 | INFO | req:N/A | app.llm.llm_config | Trying LLM provider: Gemini
+2026-10-23 10:16:55,782 | INFO | req:N/A | app.llm.llm_config | Initialized LLM provider: Gemini
+2026-10-23 10:17:13,375 | INFO | req:N/A | app.llm.llm_config | LLM request succeeded using Gemini
+2026-10-23 17:12:48,340 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-10-23 17:13:02,688 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-10-23 17:13:02,691 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-10-23 17:13:02,692 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-10-23 17:13:45,692 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-10-23 17:13:54,247 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-10-23 17:13:54,248 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-10-23 17:13:54,249 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-10-23 17:16:33,614 | ERROR | req:N/A | app.api.routes | [UPLOAD REPO] Failed to index repository https://github.com/UsamaAliK/RepoGuide: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. ', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}]}}
+Traceback (most recent call last):
+  File "E:\work\projects\langgraph_chatbot\app\api\routes.py", line 467, in upload_repo
+    result = await index_repo(url)
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "E:\work\projects\langgraph_chatbot\app\repocore\rag.py", line 103, in index_repo
+    vectors=await embed_text(texts)
+            ^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\work\projects\langgraph_chatbot\app\repocore\embeddings.py", line 59, in embed_text
+    return await asyncio.to_thread(embed_batch, texts)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python313\Lib\asyncio\threads.py", line 25, in to_thread
+    return await loop.run_in_executor(None, func_call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python313\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "E:\work\projects\langgraph_chatbot\app\repocore\embeddings.py", line 41, in embed_batch
+    response = client.models.embed_content(
+        model=settings.EMBEDDING_MODEL,
+        contents=batch,
+        config=config,
+    )
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\google\genai\models.py", line 6340, in embed_content
+    return self._embed_content(model=model, contents=contents, config=config)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\google\genai\models.py", line 5145, in _embed_content
+    response = self._api_client.request(
+        'post', path, request_dict, http_options
+    )
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\google\genai\_api_client.py", line 1611, in request
+    response = self._request(http_request, http_options, stream=False)
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\google\genai\_api_client.py", line 1404, in _request
+    return self._retry(self._request_once, http_request, stream)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\tenacity\__init__.py", line 470, in __call__
+    do = self.iter(retry_state=retry_state)
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\tenacity\__init__.py", line 371, in iter
+    result = action(retry_state)
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\tenacity\__init__.py", line 413, in exc_check
+    raise retry_exc.reraise()
+          ~~~~~~~~~~~~~~~~~^^
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\tenacity\__init__.py", line 184, in reraise
+    raise self.last_attempt.result()
+          ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Program Files\Python313\Lib\concurrent\futures\_base.py", line 449, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "C:\Program Files\Python313\Lib\concurrent\futures\_base.py", line 401, in __get_result
+    raise self._exception
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\tenacity\__init__.py", line 473, in __call__
+    result = fn(*args, **kwargs)
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\google\genai\_api_client.py", line 1381, in _request_once
+    errors.APIError.raise_for_response(response)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\google\genai\errors.py", line 155, in raise_for_response
+    cls.raise_error(response.status_code, response_json, response)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\google\genai\errors.py", line 184, in raise_error
+    raise ClientError(status_code, response_json, response)
+google.genai.errors.ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. ', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}]}}
+2026-10-25 03:22:40,483 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-10-25 03:22:50,555 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-10-25 03:22:50,556 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-10-25 03:22:50,556 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-10-25 03:23:10,617 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-10-25 03:23:17,435 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-10-25 03:23:17,439 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-10-25 03:23:17,440 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-10-25 03:39:37,539 | ERROR | req:N/A | app.api.routes | [UPLOAD REPO] Failed to index repository https://github.com/MAbdullah005/RepoGuide: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/embed_content_free_tier_tokens, limit: 30000, model: gemini-embedding-1.0, description: Embed content tokens per minute limit exceeded on Free Tier. See https://ai.google.dev/gemini-api/docs/rate-limits.\nPlease retry in 12.821936238s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'description': 'Embed content tokens per minute limit exceeded on Free Tier. See https://ai.google.dev/gemini-api/docs/rate-limits.', 'quotaMetric': 'generativelanguage.googleapis.com/embed_content_free_tier_tokens', 'quotaId': 'EmbedContentTokensPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-embedding-1.0'}, 'quotaValue': '30000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '12s'}]}}
+Traceback (most recent call last):
+  File "E:\work\projects\langgraph_chatbot\app\api\routes.py", line 467, in upload_repo
+    result = await index_repo(url)
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "E:\work\projects\langgraph_chatbot\app\repocore\rag.py", line 103, in index_repo
+    vectors=await embed_text(texts)
+            ^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\work\projects\langgraph_chatbot\app\repocore\embeddings.py", line 59, in embed_text
+    return await asyncio.to_thread(embed_batch, texts)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python313\Lib\asyncio\threads.py", line 25, in to_thread
+    return await loop.run_in_executor(None, func_call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python313\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "E:\work\projects\langgraph_chatbot\app\repocore\embeddings.py", line 41, in embed_batch
+    response = client.models.embed_content(
+        model=settings.EMBEDDING_MODEL,
+        contents=batch,
+        config=config,
+    )
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\google\genai\models.py", line 6340, in embed_content
+    return self._embed_content(model=model, contents=contents, config=config)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\google\genai\models.py", line 5145, in _embed_content
+    response = self._api_client.request(
+        'post', path, request_dict, http_options
+    )
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\google\genai\_api_client.py", line 1611, in request
+    response = self._request(http_request, http_options, stream=False)
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\google\genai\_api_client.py", line 1404, in _request
+    return self._retry(self._request_once, http_request, stream)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\tenacity\__init__.py", line 470, in __call__
+    do = self.iter(retry_state=retry_state)
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\tenacity\__init__.py", line 371, in iter
+    result = action(retry_state)
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\tenacity\__init__.py", line 413, in exc_check
+    raise retry_exc.reraise()
+          ~~~~~~~~~~~~~~~~~^^
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\tenacity\__init__.py", line 184, in reraise
+    raise self.last_attempt.result()
+          ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Program Files\Python313\Lib\concurrent\futures\_base.py", line 449, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "C:\Program Files\Python313\Lib\concurrent\futures\_base.py", line 401, in __get_result
+    raise self._exception
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\tenacity\__init__.py", line 473, in __call__
+    result = fn(*args, **kwargs)
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\google\genai\_api_client.py", line 1381, in _request_once
+    errors.APIError.raise_for_response(response)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\google\genai\errors.py", line 155, in raise_for_response
+    cls.raise_error(response.status_code, response_json, response)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\google\genai\errors.py", line 184, in raise_error
+    raise ClientError(status_code, response_json, response)
+google.genai.errors.ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/embed_content_free_tier_tokens, limit: 30000, model: gemini-embedding-1.0, description: Embed content tokens per minute limit exceeded on Free Tier. See https://ai.google.dev/gemini-api/docs/rate-limits.\nPlease retry in 12.821936238s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'description': 'Embed content tokens per minute limit exceeded on Free Tier. See https://ai.google.dev/gemini-api/docs/rate-limits.', 'quotaMetric': 'generativelanguage.googleapis.com/embed_content_free_tier_tokens', 'quotaId': 'EmbedContentTokensPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-embedding-1.0'}, 'quotaValue': '30000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '12s'}]}}
+2026-10-25 19:44:25,152 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-10-25 19:44:35,519 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-10-25 19:44:35,520 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-10-25 19:44:35,521 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-10-25 19:45:17,794 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-10-25 19:45:30,791 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-10-25 19:45:30,810 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-10-25 19:45:30,811 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-10-25 19:51:20,232 | WARNING | req:N/A | AI-Agent | Historical context retrieval failed in chat_node: 'NoneType' object has no attribute 'cursor'
+2026-10-25 19:51:20,237 | INFO | req:N/A | AI-Agent | [CHAT NODE] Calling LLM with 2 messages (thread_id=0309e693-0993-4c8e-a912-b354e0fe9483)
+2026-10-25 19:51:20,238 | INFO | req:N/A | app.llm.llm_config | Trying LLM provider: Gemini
+2026-10-25 19:51:23,089 | INFO | req:N/A | app.llm.llm_config | Initialized LLM provider: Gemini
+2026-10-25 19:51:23,089 | INFO | req:N/A | app.llm.llm_config | Binding tools to Gemini
+2026-10-25 19:51:24,510 | INFO | req:N/A | app.llm.llm_config | LLM request succeeded using Gemini
+2026-10-25 19:51:24,511 | INFO | req:N/A | AI-Agent | [CHAT NODE] LLM with tools responded: type=<class 'langchain_core.messages.ai.AIMessage'>
+2026-10-25 19:51:24,513 | INFO | req:N/A | app.graph.agent_graph | [ROUTER] LLM requested tool -> tools
+2026-10-25 19:51:24,538 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-10-25 19:51:28,106 | INFO | req:N/A | AI-Agent | [RAG] Successfully compiled 6 context chunk(s) for query: What is the attached repository about?
+2026-10-25 19:51:28,115 | INFO | req:N/A | app.graph.agent_graph | [ROUTER] Tool executed: unified_rag_tool
+2026-10-25 19:51:28,119 | INFO | req:N/A | app.graph.agent_graph | [ROUTER] RAG tool detected -> CRAG grader
+2026-10-25 19:51:28,128 | INFO | req:N/A | app.graph.crag_grader | [CRAG GRADER] Evaluating retrieved context for user question: I have given you a repo 
+tell me What This is ?
+2026-10-25 19:51:28,136 | INFO | req:N/A | app.llm.llm_config | Trying LLM provider: Gemini
+2026-10-25 19:51:30,744 | INFO | req:N/A | app.llm.llm_config | Initialized LLM provider: Gemini
+2026-10-25 19:51:33,363 | INFO | req:N/A | app.llm.llm_config | LLM request succeeded using Gemini
+2026-10-25 19:51:33,368 | INFO | req:N/A | app.graph.crag_grader | [CRAG] Raw LLM response: 'GOOD'
+2026-10-25 19:51:33,417 | INFO | req:N/A | app.graph.crag_grader | [CRAG] Evaluation complete -> Grade: GOOD
+2026-10-25 19:51:33,547 | INFO | req:N/A | app.graph.agent_graph | [CRAG ROUTER] Grade received: GOOD
+2026-10-25 19:51:33,552 | INFO | req:N/A | app.graph.agent_graph | [CRAG ROUTER] GOOD -> final_answer
+2026-10-25 19:51:33,569 | INFO | req:N/A | app.llm.llm_config | Trying LLM provider: Gemini
+2026-10-25 19:51:36,974 | INFO | req:N/A | app.llm.llm_config | Initialized LLM provider: Gemini
+2026-10-25 19:51:44,276 | INFO | req:N/A | app.llm.llm_config | LLM request succeeded using Gemini
+2026-10-25 19:51:44,294 | INFO | req:N/A | app.graph.agent_graph | [MEMORY] Current message count: 2 (threshold: 12)
+2026-10-25 19:51:44,296 | INFO | req:N/A | app.graph.agent_graph | [MEMORY] Conversation size OK -> END
+2026-10-25 19:51:44,372 | INFO | req:N/A | app.llm.llm_config | Trying LLM provider: Gemini
+2026-10-25 19:51:47,266 | INFO | req:N/A | app.llm.llm_config | Initialized LLM provider: Gemini
+2026-10-25 19:51:49,414 | INFO | req:N/A | app.llm.llm_config | LLM request succeeded using Gemini
+2026-10-25 19:52:43,884 | WARNING | req:N/A | AI-Agent | Historical context retrieval failed in chat_node: 'NoneType' object has no attribute 'cursor'
+2026-10-25 19:52:43,897 | INFO | req:N/A | AI-Agent | [CHAT NODE] Calling LLM with 4 messages (thread_id=0309e693-0993-4c8e-a912-b354e0fe9483)
+2026-10-25 19:52:43,898 | INFO | req:N/A | app.llm.llm_config | Trying LLM provider: Gemini
+2026-10-25 19:52:46,560 | INFO | req:N/A | app.llm.llm_config | Initialized LLM provider: Gemini
+2026-10-25 19:52:46,560 | INFO | req:N/A | app.llm.llm_config | Binding tools to Gemini
+2026-10-25 19:52:48,693 | INFO | req:N/A | app.llm.llm_config | LLM request succeeded using Gemini
+2026-10-25 19:52:48,699 | INFO | req:N/A | AI-Agent | [CHAT NODE] LLM with tools responded: type=<class 'langchain_core.messages.ai.AIMessage'>
+2026-10-25 19:52:48,704 | INFO | req:N/A | app.graph.agent_graph | [ROUTER] LLM requested tool -> tools
+2026-10-25 19:52:49,636 | INFO | req:N/A | AI-Agent | [RAG] Successfully compiled 6 context chunk(s) for query: What is the technology stack, how is the PyBank.py repository organized, and how
+2026-10-25 19:52:49,639 | INFO | req:N/A | app.graph.agent_graph | [ROUTER] Tool executed: unified_rag_tool
+2026-10-25 19:52:49,640 | INFO | req:N/A | app.graph.agent_graph | [ROUTER] RAG tool detected -> CRAG grader
+2026-10-25 19:52:49,643 | INFO | req:N/A | app.graph.crag_grader | [CRAG GRADER] Evaluating retrieved context for user question: and also stack 
+how it organized 
+and how to run it
+2026-10-25 19:52:49,647 | INFO | req:N/A | app.llm.llm_config | Trying LLM provider: Gemini
+2026-10-25 19:52:52,217 | INFO | req:N/A | app.llm.llm_config | Initialized LLM provider: Gemini
+2026-10-25 19:53:04,450 | INFO | req:N/A | app.llm.llm_config | LLM request succeeded using Gemini
+2026-10-25 19:53:04,451 | INFO | req:N/A | app.graph.crag_grader | [CRAG] Raw LLM response: 'PARTIAL'
+2026-10-25 19:53:04,453 | INFO | req:N/A | app.graph.crag_grader | [CRAG] Evaluation complete -> Grade: PARTIAL
+2026-10-25 19:53:04,462 | INFO | req:N/A | app.graph.agent_graph | [CRAG ROUTER] Grade received: PARTIAL
+2026-10-25 19:53:04,465 | INFO | req:N/A | app.graph.agent_graph | [CRAG ROUTER] PARTIAL -> human_approval
+2026-10-25 19:53:07,990 | INFO | req:N/A | app.graph.agent_graph | [HITL ROUTER] Decision: no
+2026-10-25 19:53:07,995 | INFO | req:N/A | app.graph.agent_graph | [HITL ROUTER] NO -> final_answer (answering with available context)
+2026-10-25 19:53:08,039 | INFO | req:N/A | app.llm.llm_config | Trying LLM provider: Gemini
+2026-10-25 19:53:11,369 | INFO | req:N/A | app.llm.llm_config | Initialized LLM provider: Gemini
+2026-10-25 19:53:17,786 | INFO | req:N/A | app.llm.llm_config | LLM request succeeded using Gemini
+2026-10-25 19:53:17,933 | INFO | req:N/A | app.graph.agent_graph | [MEMORY] Current message count: 4 (threshold: 12)
+2026-10-25 19:53:17,934 | INFO | req:N/A | app.graph.agent_graph | [MEMORY] Conversation size OK -> END
+2026-10-25 20:05:10,836 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-10-25 20:05:23,875 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-10-25 20:05:23,876 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-10-25 20:05:23,878 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-10-25 20:05:48,429 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-10-25 20:05:59,836 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-10-25 20:05:59,837 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-10-25 20:05:59,837 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-10-25 20:06:37,130 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-10-25 20:06:44,699 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-10-25 20:06:44,700 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-10-25 20:06:44,701 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-10-25 20:08:41,407 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-10-25 20:08:47,110 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-10-25 20:08:47,110 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-10-25 20:08:47,111 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-10-25 20:09:01,793 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-10-25 20:09:13,325 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-10-25 20:09:13,325 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-10-25 20:09:13,326 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-10-25 20:13:34,063 | WARNING | req:N/A | AI-Agent | Historical context retrieval failed in chat_node: 'NoneType' object has no attribute 'cursor'
+2026-10-25 20:13:34,074 | INFO | req:N/A | AI-Agent | [CHAT NODE] Calling LLM with 2 messages (thread_id=84bcc8f0-578b-4bd0-8816-ac1cee8d0be2)
+2026-10-25 20:13:34,074 | INFO | req:N/A | app.llm.llm_config | Trying LLM provider: Gemini
+2026-10-25 20:13:37,165 | INFO | req:N/A | app.llm.llm_config | Initialized LLM provider: Gemini
+2026-10-25 20:13:37,166 | INFO | req:N/A | app.llm.llm_config | Binding tools to Gemini
+2026-10-25 20:13:39,574 | INFO | req:N/A | app.llm.llm_config | LLM request succeeded using Gemini
+2026-10-25 20:13:39,575 | INFO | req:N/A | AI-Agent | [CHAT NODE] LLM with tools responded: type=<class 'langchain_core.messages.ai.AIMessage'>
+2026-10-25 20:13:39,580 | INFO | req:N/A | app.graph.agent_graph | [ROUTER] LLM requested tool -> tools
+2026-10-25 20:13:39,642 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-10-25 20:13:43,536 | INFO | req:N/A | AI-Agent | [RAG] Successfully compiled 6 context chunk(s) for query: Describe the PyBank.py project, its stack, organization, how to run it, and its 
+2026-10-25 20:13:43,544 | INFO | req:N/A | app.graph.agent_graph | [ROUTER] Tool executed: unified_rag_tool
+2026-10-25 20:13:43,545 | INFO | req:N/A | app.graph.agent_graph | [ROUTER] RAG tool detected -> CRAG grader
+2026-10-25 20:13:43,547 | INFO | req:N/A | app.graph.crag_grader | [CRAG GRADER] Evaluating retrieved context for user question: What is this project ?
+What stack is use in this project ?
+How it's organized ?
+
+2026-10-25 20:13:43,555 | INFO | req:N/A | app.llm.llm_config | Trying LLM provider: Gemini
+2026-10-25 20:13:46,104 | INFO | req:N/A | app.llm.llm_config | Initialized LLM provider: Gemini
+2026-10-25 20:13:50,319 | INFO | req:N/A | app.llm.llm_config | LLM request succeeded using Gemini
+2026-10-25 20:13:50,319 | INFO | req:N/A | app.graph.crag_grader | [CRAG] Raw LLM response: 'PARTIAL'
+2026-10-25 20:13:50,320 | INFO | req:N/A | app.graph.crag_grader | [CRAG] Evaluation complete -> Grade: PARTIAL
+2026-10-25 20:13:50,325 | INFO | req:N/A | app.graph.agent_graph | [CRAG ROUTER] Grade received: PARTIAL
+2026-10-25 20:13:50,327 | INFO | req:N/A | app.graph.agent_graph | [CRAG ROUTER] PARTIAL -> human_approval
+2026-10-25 20:14:08,980 | INFO | req:N/A | app.graph.agent_graph | [HITL ROUTER] Decision: no
+2026-10-25 20:14:08,983 | INFO | req:N/A | app.graph.agent_graph | [HITL ROUTER] NO -> final_answer (answering with available context)
+2026-10-25 20:14:08,995 | INFO | req:N/A | app.llm.llm_config | Trying LLM provider: Gemini
+2026-10-25 20:14:12,119 | INFO | req:N/A | app.llm.llm_config | Initialized LLM provider: Gemini
+2026-10-25 20:14:25,931 | INFO | req:N/A | app.llm.llm_config | LLM request succeeded using Gemini
+2026-10-25 20:14:25,972 | INFO | req:N/A | app.graph.agent_graph | [MEMORY] Current message count: 2 (threshold: 12)
+2026-10-25 20:14:25,977 | INFO | req:N/A | app.graph.agent_graph | [MEMORY] Conversation size OK -> END
+2026-10-25 20:17:03,778 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-10-25 20:17:09,300 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-10-25 20:17:09,322 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-10-25 20:17:09,329 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-10-25 20:17:28,348 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-10-25 20:17:35,084 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-10-25 20:17:35,085 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-10-25 20:17:35,086 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-10-25 20:17:52,737 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-10-25 20:17:58,272 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-10-25 20:17:58,273 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-10-25 20:17:58,273 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-10-25 20:18:35,789 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-10-25 20:18:41,360 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-10-25 20:18:41,362 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-10-25 20:18:41,363 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-10-28 05:38:02,163 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-10-28 05:38:12,047 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-10-28 05:38:12,047 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-10-28 05:38:12,048 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-10-28 05:38:28,927 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-10-28 05:38:36,735 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-10-28 05:38:36,736 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-10-28 05:38:36,737 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-10-29 04:37:29,550 | WARNING | req:N/A | AI-Agent | Historical context retrieval failed in chat_node: 'NoneType' object has no attribute 'cursor'
+2026-10-29 04:37:29,559 | INFO | req:N/A | AI-Agent | [CHAT NODE] Calling LLM with 2 messages (thread_id=4baddf95-64c6-49fb-abd8-0cd3f570db10)
+2026-10-29 04:37:29,564 | INFO | req:N/A | app.llm.llm_config | Trying LLM provider: Gemini
+2026-10-29 04:37:34,748 | INFO | req:N/A | app.llm.llm_config | Initialized LLM provider: Gemini
+2026-10-29 04:37:34,748 | INFO | req:N/A | app.llm.llm_config | Binding tools to Gemini
+2026-10-29 04:37:38,004 | INFO | req:N/A | app.llm.llm_config | LLM request succeeded using Gemini
+2026-10-29 04:37:38,007 | INFO | req:N/A | AI-Agent | [CHAT NODE] LLM with tools responded: type=<class 'langchain_core.messages.ai.AIMessage'>
+2026-10-29 04:37:38,009 | INFO | req:N/A | app.graph.agent_graph | [ROUTER] LLM requested tool -> tools
+2026-10-29 04:37:38,034 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-10-29 04:37:43,107 | INFO | req:N/A | AI-Agent | [RAG] Successfully compiled 6 context chunk(s) for query: Describe the PyBank.py project, its stack, organization, how to run it, and a su
+2026-10-29 04:37:43,109 | INFO | req:N/A | app.graph.agent_graph | [ROUTER] Tool executed: unified_rag_tool
+2026-10-29 04:37:43,110 | INFO | req:N/A | app.graph.agent_graph | [ROUTER] RAG tool detected -> CRAG grader
+2026-10-29 04:37:43,115 | INFO | req:N/A | app.graph.crag_grader | [CRAG GRADER] Evaluating retrieved context for user question: What is this project ? What stack is use in this project ? How it's organized ? 
+2026-10-29 04:37:43,119 | INFO | req:N/A | app.llm.llm_config | Trying LLM provider: Gemini
+2026-10-29 04:37:45,762 | INFO | req:N/A | app.llm.llm_config | Initialized LLM provider: Gemini
+2026-10-29 04:37:51,219 | INFO | req:N/A | app.llm.llm_config | LLM request succeeded using Gemini
+2026-10-29 04:37:51,222 | INFO | req:N/A | app.graph.crag_grader | [CRAG] Raw LLM response: 'PARTIAL'
+2026-10-29 04:37:51,224 | INFO | req:N/A | app.graph.crag_grader | [CRAG] Evaluation complete -> Grade: PARTIAL
+2026-10-29 04:37:51,232 | INFO | req:N/A | app.graph.agent_graph | [CRAG ROUTER] Grade received: PARTIAL
+2026-10-29 04:37:51,234 | INFO | req:N/A | app.graph.agent_graph | [CRAG ROUTER] PARTIAL -> human_approval
+2026-10-29 04:37:59,674 | INFO | req:N/A | app.graph.agent_graph | [HITL ROUTER] Decision: no
+2026-10-29 04:37:59,674 | INFO | req:N/A | app.graph.agent_graph | [HITL ROUTER] NO -> final_answer (answering with available context)
+2026-10-29 04:37:59,759 | INFO | req:N/A | app.llm.llm_config | Trying LLM provider: Gemini
+2026-10-29 04:38:02,118 | INFO | req:N/A | app.llm.llm_config | Initialized LLM provider: Gemini
+2026-10-29 04:38:11,356 | INFO | req:N/A | app.llm.llm_config | LLM request succeeded using Gemini
+2026-10-29 04:38:11,377 | INFO | req:N/A | app.graph.agent_graph | [MEMORY] Current message count: 2 (threshold: 12)
+2026-10-29 04:38:11,379 | INFO | req:N/A | app.graph.agent_graph | [MEMORY] Conversation size OK -> END
+2026-10-29 04:39:18,917 | ERROR | req:N/A | app.api.routes | [UPLOAD REPO] Failed to index repository https://github.com/MAbdullah005/PyBank.py: [Errno 11001] getaddrinfo failed
+Traceback (most recent call last):
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\httpx\_transports\default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\httpx\_transports\default.py", line 394, in handle_async_request
+    resp = await self._pool.handle_async_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\httpcore\_async\connection_pool.py", line 256, in handle_async_request
+    raise exc from None
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\httpcore\_async\connection_pool.py", line 236, in handle_async_request
+    response = await connection.handle_async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        pool_request.request
+        ^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\httpcore\_async\connection.py", line 101, in handle_async_request
+    raise exc
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\httpcore\_async\connection.py", line 78, in handle_async_request
+    stream = await self._connect(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\httpcore\_async\connection.py", line 124, in _connect
+    stream = await self._network_backend.connect_tcp(**kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\httpcore\_backends\auto.py", line 31, in connect_tcp
+    return await self._backend.connect_tcp(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\httpcore\_backends\anyio.py", line 113, in connect_tcp
+    with map_exceptions(exc_map):
+         ~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Program Files\Python313\Lib\contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\httpcore\_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ConnectError: [Errno 11001] getaddrinfo failed
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "E:\work\projects\langgraph_chatbot\app\api\routes.py", line 467, in upload_repo
+    result = await index_repo(url)
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "E:\work\projects\langgraph_chatbot\app\repocore\rag.py", line 85, in index_repo
+    meta=await get_repo_metadata(owner,repo)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\work\projects\langgraph_chatbot\app\repocore\github.py", line 23, in get_repo_metadata
+    response = await client.get(
+               ^^^^^^^^^^^^^^^^^
+        f"https://api.github.com/repos/{owner}/{repo}"
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\httpx\_client.py", line 1768, in get
+    return await self.request(
+           ^^^^^^^^^^^^^^^^^^^
+    ...<9 lines>...
+    )
+    ^
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\httpx\_client.py", line 1540, in request
+    return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\httpx\_client.py", line 1629, in send
+    response = await self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\httpx\_client.py", line 1657, in _send_handling_auth
+    response = await self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\httpx\_client.py", line 1694, in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\httpx\_client.py", line 1730, in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\httpx\_transports\default.py", line 393, in handle_async_request
+    with map_httpcore_exceptions():
+         ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Program Files\Python313\Lib\contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\httpx\_transports\default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ConnectError: [Errno 11001] getaddrinfo failed
+2026-10-29 05:21:32,792 | ERROR | req:N/A | app.api.routes | [UPLOAD REPO] Failed to index repository https://github.com/MAbdullah005/RepoGuide: [Errno 11001] getaddrinfo failed
+Traceback (most recent call last):
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\httpx\_transports\default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\httpx\_transports\default.py", line 394, in handle_async_request
+    resp = await self._pool.handle_async_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\httpcore\_async\connection_pool.py", line 256, in handle_async_request
+    raise exc from None
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\httpcore\_async\connection_pool.py", line 236, in handle_async_request
+    response = await connection.handle_async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        pool_request.request
+        ^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\httpcore\_async\connection.py", line 101, in handle_async_request
+    raise exc
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\httpcore\_async\connection.py", line 78, in handle_async_request
+    stream = await self._connect(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\httpcore\_async\connection.py", line 124, in _connect
+    stream = await self._network_backend.connect_tcp(**kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\httpcore\_backends\auto.py", line 31, in connect_tcp
+    return await self._backend.connect_tcp(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\httpcore\_backends\anyio.py", line 113, in connect_tcp
+    with map_exceptions(exc_map):
+         ~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Program Files\Python313\Lib\contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\httpcore\_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ConnectError: [Errno 11001] getaddrinfo failed
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "E:\work\projects\langgraph_chatbot\app\api\routes.py", line 467, in upload_repo
+    result = await index_repo(url)
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "E:\work\projects\langgraph_chatbot\app\repocore\rag.py", line 85, in index_repo
+    meta=await get_repo_metadata(owner,repo)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\work\projects\langgraph_chatbot\app\repocore\github.py", line 23, in get_repo_metadata
+    response = await client.get(
+               ^^^^^^^^^^^^^^^^^
+        f"https://api.github.com/repos/{owner}/{repo}"
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\httpx\_client.py", line 1768, in get
+    return await self.request(
+           ^^^^^^^^^^^^^^^^^^^
+    ...<9 lines>...
+    )
+    ^
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\httpx\_client.py", line 1540, in request
+    return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\httpx\_client.py", line 1629, in send
+    response = await self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\httpx\_client.py", line 1657, in _send_handling_auth
+    response = await self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\httpx\_client.py", line 1694, in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\httpx\_client.py", line 1730, in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\httpx\_transports\default.py", line 393, in handle_async_request
+    with map_httpcore_exceptions():
+         ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Program Files\Python313\Lib\contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\httpx\_transports\default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ConnectError: [Errno 11001] getaddrinfo failed
+2026-10-29 05:27:16,792 | ERROR | req:N/A | app.api.routes | [UPLOAD REPO] Failed to index repository https://github.com/MAbdullah005/RepoGuide: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/embed_content_free_tier_tokens, limit: 30000, model: gemini-embedding-1.0, description: Embed content tokens per minute limit exceeded on Free Tier. See https://ai.google.dev/gemini-api/docs/rate-limits.\nPlease retry in 42.98787682s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'description': 'Embed content tokens per minute limit exceeded on Free Tier. See https://ai.google.dev/gemini-api/docs/rate-limits.', 'quotaMetric': 'generativelanguage.googleapis.com/embed_content_free_tier_tokens', 'quotaId': 'EmbedContentTokensPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-embedding-1.0'}, 'quotaValue': '30000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '42s'}]}}
+Traceback (most recent call last):
+  File "E:\work\projects\langgraph_chatbot\app\api\routes.py", line 467, in upload_repo
+    result = await index_repo(url)
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "E:\work\projects\langgraph_chatbot\app\repocore\rag.py", line 103, in index_repo
+    vectors=await embed_text(texts)
+            ^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\work\projects\langgraph_chatbot\app\repocore\embeddings.py", line 59, in embed_text
+    return await asyncio.to_thread(embed_batch, texts)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python313\Lib\asyncio\threads.py", line 25, in to_thread
+    return await loop.run_in_executor(None, func_call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python313\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "E:\work\projects\langgraph_chatbot\app\repocore\embeddings.py", line 41, in embed_batch
+    response = client.models.embed_content(
+        model=settings.EMBEDDING_MODEL,
+        contents=batch,
+        config=config,
+    )
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\google\genai\models.py", line 6340, in embed_content
+    return self._embed_content(model=model, contents=contents, config=config)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\google\genai\models.py", line 5145, in _embed_content
+    response = self._api_client.request(
+        'post', path, request_dict, http_options
+    )
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\google\genai\_api_client.py", line 1611, in request
+    response = self._request(http_request, http_options, stream=False)
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\google\genai\_api_client.py", line 1404, in _request
+    return self._retry(self._request_once, http_request, stream)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\tenacity\__init__.py", line 470, in __call__
+    do = self.iter(retry_state=retry_state)
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\tenacity\__init__.py", line 371, in iter
+    result = action(retry_state)
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\tenacity\__init__.py", line 413, in exc_check
+    raise retry_exc.reraise()
+          ~~~~~~~~~~~~~~~~~^^
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\tenacity\__init__.py", line 184, in reraise
+    raise self.last_attempt.result()
+          ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Program Files\Python313\Lib\concurrent\futures\_base.py", line 449, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "C:\Program Files\Python313\Lib\concurrent\futures\_base.py", line 401, in __get_result
+    raise self._exception
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\tenacity\__init__.py", line 473, in __call__
+    result = fn(*args, **kwargs)
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\google\genai\_api_client.py", line 1381, in _request_once
+    errors.APIError.raise_for_response(response)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\google\genai\errors.py", line 155, in raise_for_response
+    cls.raise_error(response.status_code, response_json, response)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\work\projects\langgraph_chatbot\myenv\Lib\site-packages\google\genai\errors.py", line 184, in raise_error
+    raise ClientError(status_code, response_json, response)
+google.genai.errors.ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/embed_content_free_tier_tokens, limit: 30000, model: gemini-embedding-1.0, description: Embed content tokens per minute limit exceeded on Free Tier. See https://ai.google.dev/gemini-api/docs/rate-limits.\nPlease retry in 42.98787682s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'description': 'Embed content tokens per minute limit exceeded on Free Tier. See https://ai.google.dev/gemini-api/docs/rate-limits.', 'quotaMetric': 'generativelanguage.googleapis.com/embed_content_free_tier_tokens', 'quotaId': 'EmbedContentTokensPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-embedding-1.0'}, 'quotaValue': '30000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '42s'}]}}
+2026-10-30 01:49:09,194 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-10-30 01:49:14,831 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-10-30 01:49:14,831 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-10-30 01:49:14,832 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-10-30 01:49:28,148 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-10-30 01:49:31,515 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-10-30 01:49:31,515 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-10-30 01:49:31,516 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM

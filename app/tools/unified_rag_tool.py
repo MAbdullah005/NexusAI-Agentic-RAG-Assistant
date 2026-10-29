@@ -102,6 +102,10 @@ def unified_rag_tool(
         top_k = get_rag_top_k()
         context_parts = []
 
+        # Track unique GitHub source links → numbered label (for deduplication)
+        source_index: dict[str, int] = {}
+        source_legend: list[str] = []
+
         for i, doc in enumerate(
             docs[:top_k],
             start=1
@@ -157,11 +161,21 @@ Chunk ID: {chunk_id}"""
                 )
                 display_name = filename or github_url
                 line_info = f" (lines {start_line}-{end_line})" if start_line and end_line else ""
-                header = f"""--- Retrieved Chunk {i} ---
+
+                # Assign a stable [Source N] label per unique source link
+                if source_link not in source_index:
+                    source_index[source_link] = len(source_index) + 1
+                    source_legend.append(
+                        f"[Source {source_index[source_link]}]: {source_link}"
+                    )
+                src_label = f"[Source {source_index[source_link]}]"
+
+                header = f"""--- Retrieved Chunk {i} — cite as {src_label} ---
 Type: GitHub Repository Code
 Repository: {display_name}
 File: {file_path}{line_info}
 Source Link: {source_link}
+Citation Label: {src_label}
 Document ID: {doc_id}
 Chunk ID: {chunk_id}"""
 
@@ -185,6 +199,12 @@ Content:
         context = "\n".join(
             context_parts
         )
+
+        # Append a compact source legend for GitHub chunks so the LLM knows
+        # exactly which numbered label maps to which URL — no guesswork needed.
+        if source_legend:
+            legend_block = "\n--- GitHub Source Labels (use these exact labels inline) ---\n" + "\n".join(source_legend)
+            context = context + legend_block
 
         logger.info(f"[RAG] Successfully compiled {len(context_parts)} context chunk(s) for query: {query[:80]}")
 
