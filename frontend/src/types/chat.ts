@@ -11,6 +11,7 @@ export interface Thread {
   thread_id: string;
   title: string;
   created_at: string;
+  is_pinned?: boolean;
 }
 
 export interface AttachedDocument {

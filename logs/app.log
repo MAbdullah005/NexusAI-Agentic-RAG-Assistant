@@ -1118,3 +1118,126 @@ google.genai.errors.ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429,
 2026-10-30 01:49:31,515 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
 2026-10-30 01:49:31,515 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
 2026-10-30 01:49:31,516 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-11-03 16:05:10,148 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-11-03 16:05:14,703 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-11-03 16:05:14,703 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-11-03 16:05:14,703 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-11-03 16:05:29,904 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-11-03 16:05:36,274 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-11-03 16:05:36,274 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-11-03 16:05:36,277 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-11-03 16:08:44,603 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-11-03 16:10:51,252 | WARNING | req:N/A | AI-Agent | Historical context retrieval failed in chat_node: 'NoneType' object has no attribute 'cursor'
+2026-11-03 16:10:51,261 | INFO | req:N/A | AI-Agent | [CHAT NODE] Calling LLM with 2 messages (thread_id=be7a3b72-e072-4a97-aa3a-f680d5fda0fe)
+2026-11-03 16:10:51,263 | INFO | req:N/A | app.llm.llm_config | Trying LLM provider: Gemini
+2026-11-03 16:10:53,037 | INFO | req:N/A | app.llm.llm_config | Initialized LLM provider: Gemini
+2026-11-03 16:10:53,037 | INFO | req:N/A | app.llm.llm_config | Binding tools to Gemini
+2026-11-03 16:10:54,901 | INFO | req:N/A | app.llm.llm_config | LLM request succeeded using Gemini
+2026-11-03 16:10:54,902 | INFO | req:N/A | AI-Agent | [CHAT NODE] LLM with tools responded: type=<class 'langchain_core.messages.ai.AIMessage'>
+2026-11-03 16:10:54,903 | INFO | req:N/A | app.graph.agent_graph | [ROUTER] LLM requested tool -> tools
+2026-11-03 16:10:54,937 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-11-03 16:11:00,932 | INFO | req:N/A | AI-Agent | [RAG] Successfully compiled 6 context chunk(s) for query: What are the first projects listed in Abdullah_resume.pdf and Usama's_Resume.pdf
+2026-11-03 16:11:00,935 | INFO | req:N/A | app.graph.agent_graph | [ROUTER] Tool executed: unified_rag_tool
+2026-11-03 16:11:00,935 | INFO | req:N/A | app.graph.agent_graph | [ROUTER] RAG tool detected -> CRAG grader
+2026-11-03 16:11:00,939 | INFO | req:N/A | app.graph.crag_grader | [CRAG GRADER] Evaluating retrieved context for user question: I have given you two resume first from btoh resume give me thier first project t
+2026-11-03 16:11:00,942 | INFO | req:N/A | app.llm.llm_config | Trying LLM provider: Gemini
+2026-11-03 16:11:02,784 | INFO | req:N/A | app.llm.llm_config | Initialized LLM provider: Gemini
+2026-11-03 16:11:13,301 | INFO | req:N/A | app.llm.llm_config | LLM request succeeded using Gemini
+2026-11-03 16:11:13,345 | INFO | req:N/A | app.graph.crag_grader | [CRAG] Raw LLM response: 'GOOD'
+2026-11-03 16:11:13,361 | INFO | req:N/A | app.graph.crag_grader | [CRAG] Evaluation complete -> Grade: GOOD
+2026-11-03 16:11:13,364 | INFO | req:N/A | app.graph.agent_graph | [CRAG ROUTER] Grade received: GOOD
+2026-11-03 16:11:13,423 | INFO | req:N/A | app.graph.agent_graph | [CRAG ROUTER] GOOD -> final_answer
+2026-11-03 16:11:13,783 | INFO | req:N/A | app.llm.llm_config | Trying LLM provider: Gemini
+2026-11-03 16:11:16,696 | INFO | req:N/A | app.llm.llm_config | Initialized LLM provider: Gemini
+2026-11-03 16:11:46,834 | INFO | req:N/A | app.llm.llm_config | LLM request succeeded using Gemini
+2026-11-03 16:11:46,839 | INFO | req:N/A | app.graph.agent_graph | [MEMORY] Current message count: 2 (threshold: 12)
+2026-11-03 16:11:46,839 | INFO | req:N/A | app.graph.agent_graph | [MEMORY] Conversation size OK -> END
+2026-11-03 16:11:46,898 | INFO | req:N/A | app.llm.llm_config | Trying LLM provider: Gemini
+2026-11-03 16:11:49,127 | INFO | req:N/A | app.llm.llm_config | Initialized LLM provider: Gemini
+2026-11-03 16:11:53,536 | INFO | req:N/A | app.llm.llm_config | LLM request succeeded using Gemini
+2026-11-05 16:35:02,128 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-11-05 16:35:13,411 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-11-05 16:35:13,477 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-11-05 16:35:13,532 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-11-05 16:44:36,192 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-11-05 16:44:45,095 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-11-05 16:44:45,101 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-11-05 16:44:45,102 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-11-05 16:45:39,960 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-11-05 16:45:58,771 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-11-05 16:45:58,771 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-11-05 16:45:58,772 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-11-05 16:46:35,043 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-11-05 16:47:19,812 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-11-05 16:47:19,959 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-11-05 16:47:20,380 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-11-05 16:48:13,757 | WARNING | req:N/A | AI-Agent | Historical context retrieval failed in chat_node: 'NoneType' object has no attribute 'cursor'
+2026-11-05 16:48:13,897 | INFO | req:N/A | AI-Agent | [CHAT NODE] Calling LLM with 2 messages (thread_id=6adc32e9-8613-4c44-b5a3-ffec1c9dcaac)
+2026-11-05 16:48:13,943 | INFO | req:N/A | app.llm.llm_config | Trying LLM provider: Gemini
+2026-11-05 16:48:19,453 | INFO | req:N/A | app.llm.llm_config | Initialized LLM provider: Gemini
+2026-11-05 16:48:19,453 | INFO | req:N/A | app.llm.llm_config | Binding tools to Gemini
+2026-11-05 16:48:22,094 | INFO | req:N/A | app.llm.llm_config | LLM request succeeded using Gemini
+2026-11-05 16:48:22,096 | INFO | req:N/A | AI-Agent | [CHAT NODE] LLM with tools responded: type=<class 'langchain_core.messages.ai.AIMessage'>
+2026-11-05 16:48:22,097 | INFO | req:N/A | app.graph.agent_graph | [ROUTER] No tool requested -> memory_check
+2026-11-05 16:48:22,119 | INFO | req:N/A | app.graph.agent_graph | [MEMORY] Current message count: 2 (threshold: 12)
+2026-11-05 16:48:22,121 | INFO | req:N/A | app.graph.agent_graph | [MEMORY] Conversation size OK -> END
+2026-11-06 00:42:40,844 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-11-06 00:42:53,123 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-11-06 00:42:53,195 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-11-06 00:42:53,260 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-11-06 00:53:26,836 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-11-06 00:53:37,337 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-11-06 00:53:37,338 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-11-06 00:53:37,351 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-11-06 00:54:12,913 | INFO | req:N/A | app.llm.llm_config | Trying LLM provider: Gemini
+2026-11-06 00:54:13,388 | WARNING | req:N/A | AI-Agent | Historical context retrieval failed in chat_node: 'NoneType' object has no attribute 'cursor'
+2026-11-06 00:54:13,393 | INFO | req:N/A | AI-Agent | [CHAT NODE] Calling LLM with 2 messages (thread_id=5f17c6b6-b88b-4778-a240-18db7e3bc654)
+2026-11-06 00:54:13,393 | INFO | req:N/A | app.llm.llm_config | Trying LLM provider: Gemini
+2026-11-06 00:54:16,961 | INFO | req:N/A | app.llm.llm_config | Initialized LLM provider: Gemini
+2026-11-06 00:54:17,290 | INFO | req:N/A | app.llm.llm_config | Initialized LLM provider: Gemini
+2026-11-06 00:54:17,290 | INFO | req:N/A | app.llm.llm_config | Binding tools to Gemini
+2026-11-06 00:54:19,291 | INFO | req:N/A | app.llm.llm_config | LLM request succeeded using Gemini
+2026-11-06 00:54:19,298 | INFO | req:N/A | AI-Agent | [CHAT NODE] LLM with tools responded: type=<class 'langchain_core.messages.ai.AIMessage'>
+2026-11-06 00:54:19,305 | INFO | req:N/A | app.graph.agent_graph | [ROUTER] LLM requested tool -> tools
+2026-11-06 00:54:19,341 | INFO | req:N/A | app.tools.search_tool | Search tool called | query='transformer'
+2026-11-06 00:54:19,356 | INFO | req:N/A | app.tools.search_tool | Using Tavily Search
+2026-11-06 00:54:19,531 | INFO | req:N/A | app.llm.llm_config | LLM request succeeded using Gemini
+2026-11-06 00:54:24,870 | INFO | req:N/A | app.tools.search_tool | Tavily search completed successfully
+2026-11-06 00:54:24,892 | INFO | req:N/A | app.graph.agent_graph | [ROUTER] Tool executed: search_tool
+2026-11-06 00:54:24,893 | INFO | req:N/A | app.graph.agent_graph | [ROUTER] Other tool detected -> chat_node
+2026-11-06 00:54:24,911 | WARNING | req:N/A | AI-Agent | Historical context retrieval failed in chat_node: 'NoneType' object has no attribute 'cursor'
+2026-11-06 00:54:24,915 | INFO | req:N/A | AI-Agent | [CHAT NODE] Calling LLM with 4 messages (thread_id=5f17c6b6-b88b-4778-a240-18db7e3bc654)
+2026-11-06 00:54:24,916 | INFO | req:N/A | app.llm.llm_config | Trying LLM provider: Gemini
+2026-11-06 00:54:27,895 | INFO | req:N/A | app.llm.llm_config | Initialized LLM provider: Gemini
+2026-11-06 00:54:27,896 | INFO | req:N/A | app.llm.llm_config | Binding tools to Gemini
+2026-11-06 00:54:30,189 | INFO | req:N/A | app.llm.llm_config | LLM request succeeded using Gemini
+2026-11-06 00:54:30,195 | INFO | req:N/A | AI-Agent | [CHAT NODE] LLM with tools responded: type=<class 'langchain_core.messages.ai.AIMessage'>
+2026-11-06 00:54:30,203 | INFO | req:N/A | app.graph.agent_graph | [ROUTER] No tool requested -> memory_check
+2026-11-06 00:54:30,280 | INFO | req:N/A | app.graph.agent_graph | [MEMORY] Current message count: 2 (threshold: 12)
+2026-11-06 00:54:30,284 | INFO | req:N/A | app.graph.agent_graph | [MEMORY] Conversation size OK -> END
+2026-11-06 00:55:06,593 | INFO | req:N/A | app.llm.llm_config | Trying LLM provider: Gemini
+2026-11-06 00:55:06,726 | WARNING | req:N/A | AI-Agent | Historical context retrieval failed in chat_node: 'NoneType' object has no attribute 'cursor'
+2026-11-06 00:55:06,730 | INFO | req:N/A | AI-Agent | [CHAT NODE] Calling LLM with 2 messages (thread_id=d52281ea-280b-4882-8d09-9357210608ae)
+2026-11-06 00:55:06,730 | INFO | req:N/A | app.llm.llm_config | Trying LLM provider: Gemini
+2026-11-06 00:55:10,788 | INFO | req:N/A | app.llm.llm_config | Initialized LLM provider: Gemini
+2026-11-06 00:55:10,856 | INFO | req:N/A | app.llm.llm_config | Initialized LLM provider: Gemini
+2026-11-06 00:55:10,856 | INFO | req:N/A | app.llm.llm_config | Binding tools to Gemini
+2026-11-06 00:55:12,553 | INFO | req:N/A | app.llm.llm_config | LLM request succeeded using Gemini
+2026-11-06 00:55:12,553 | INFO | req:N/A | AI-Agent | [CHAT NODE] LLM with tools responded: type=<class 'langchain_core.messages.ai.AIMessage'>
+2026-11-06 00:55:12,555 | INFO | req:N/A | app.graph.agent_graph | [ROUTER] LLM requested tool -> tools
+2026-11-06 00:55:12,565 | INFO | req:N/A | app.tools.search_tool | Search tool called | query='how to become a successful content creator'
+2026-11-06 00:55:12,570 | INFO | req:N/A | app.tools.search_tool | Using Tavily Search
+2026-11-06 00:55:15,155 | INFO | req:N/A | app.llm.llm_config | LLM request succeeded using Gemini
+2026-11-06 00:55:19,134 | INFO | req:N/A | app.tools.search_tool | Tavily search completed successfully
+2026-11-06 00:55:19,139 | INFO | req:N/A | app.graph.agent_graph | [ROUTER] Tool executed: search_tool
+2026-11-06 00:55:19,184 | INFO | req:N/A | app.graph.agent_graph | [ROUTER] Other tool detected -> chat_node
+2026-11-06 00:55:19,234 | WARNING | req:N/A | AI-Agent | Historical context retrieval failed in chat_node: 'NoneType' object has no attribute 'cursor'
+2026-11-06 00:55:19,268 | INFO | req:N/A | AI-Agent | [CHAT NODE] Calling LLM with 4 messages (thread_id=d52281ea-280b-4882-8d09-9357210608ae)
+2026-11-06 00:55:19,280 | INFO | req:N/A | app.llm.llm_config | Trying LLM provider: Gemini
+2026-11-06 00:55:23,124 | INFO | req:N/A | app.llm.llm_config | Initialized LLM provider: Gemini
+2026-11-06 00:55:23,125 | INFO | req:N/A | app.llm.llm_config | Binding tools to Gemini
+2026-11-06 00:55:27,373 | INFO | req:N/A | app.llm.llm_config | LLM request succeeded using Gemini
+2026-11-06 00:55:27,375 | INFO | req:N/A | AI-Agent | [CHAT NODE] LLM with tools responded: type=<class 'langchain_core.messages.ai.AIMessage'>
+2026-11-06 00:55:27,377 | INFO | req:N/A | app.graph.agent_graph | [ROUTER] No tool requested -> memory_check
+2026-11-06 00:55:27,426 | INFO | req:N/A | app.graph.agent_graph | [MEMORY] Current message count: 2 (threshold: 12)
+2026-11-06 00:55:27,431 | INFO | req:N/A | app.graph.agent_graph | [MEMORY] Conversation size OK -> END

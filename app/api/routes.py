@@ -266,12 +266,16 @@ def get_threads(
         cursor.execute(
             """
             SELECT
-                thread_id,
-                title,
-                created_at
-            FROM threads
-            WHERE user_id = ?
-            ORDER BY created_at DESC
+                t.thread_id,
+                t.title,
+                t.created_at,
+                COALESCE(t.is_pinned, FALSE) as is_pinned
+            FROM threads t
+            WHERE t.user_id = ?
+              AND EXISTS (
+                  SELECT 1 FROM messages m WHERE m.thread_id = t.thread_id
+              )
+            ORDER BY is_pinned DESC, t.created_at DESC
             """,
             (user_id,)
         )
@@ -285,7 +289,8 @@ def get_threads(
         result.append({
             "thread_id": row[0],
             "title": row[1] or f"Chat {row[0][:6]}",
-            "created_at": created_val
+            "created_at": created_val,
+            "is_pinned": bool(row[3]),
         })
 
     return result
@@ -324,6 +329,91 @@ def new_thread(
     return {
         "thread_id": thread_id
     }
+
+
+# ── Rename Thread ─────────────────────────────────────────────────────────────
+
+@router.patch("/thread/{thread_id}/rename")
+def rename_thread(
+    thread_id: str,
+    data: dict,
+    current_user: dict = Depends(get_current_user)
+):
+    user_id = current_user["user_id"]
+    new_title = (data.get("title") or "").strip()
+
+    if not new_title:
+        raise HTTPException(status_code=400, detail="Title cannot be empty.")
+    if len(new_title) > 255:
+        raise HTTPException(status_code=400, detail="Title too long (max 255 chars).")
+
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT thread_id FROM threads WHERE thread_id = ? AND user_id = ?",
+            (thread_id, user_id)
+        )
+        if not cursor.fetchone():
+            raise HTTPException(status_code=404, detail="Thread not found.")
+        cursor.execute(
+            "UPDATE threads SET title = ? WHERE thread_id = ? AND user_id = ?",
+            (new_title, thread_id, user_id)
+        )
+
+    return {"thread_id": thread_id, "title": new_title}
+
+
+# ── Pin / Unpin Thread ────────────────────────────────────────────────────────
+
+@router.patch("/thread/{thread_id}/pin")
+def pin_thread(
+    thread_id: str,
+    data: dict,
+    current_user: dict = Depends(get_current_user)
+):
+    user_id = current_user["user_id"]
+    pinned = bool(data.get("pinned", True))
+
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT thread_id FROM threads WHERE thread_id = ? AND user_id = ?",
+            (thread_id, user_id)
+        )
+        if not cursor.fetchone():
+            raise HTTPException(status_code=404, detail="Thread not found.")
+        cursor.execute(
+            "UPDATE threads SET is_pinned = ? WHERE thread_id = ? AND user_id = ?",
+            (pinned, thread_id, user_id)
+        )
+
+    return {"thread_id": thread_id, "is_pinned": pinned}
+
+
+# ── Delete Thread ─────────────────────────────────────────────────────────────
+
+@router.delete("/thread/{thread_id}")
+def delete_thread(
+    thread_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    user_id = current_user["user_id"]
+
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT thread_id FROM threads WHERE thread_id = ? AND user_id = ?",
+            (thread_id, user_id)
+        )
+        if not cursor.fetchone():
+            raise HTTPException(status_code=404, detail="Thread not found.")
+        # ON DELETE CASCADE handles messages, thread_documents, thread_context
+        cursor.execute(
+            "DELETE FROM threads WHERE thread_id = ? AND user_id = ?",
+            (thread_id, user_id)
+        )
+
+    return {"deleted": True, "thread_id": thread_id}
 
 
 #  Title Generation 
@@ -1146,7 +1236,7 @@ def get_pdf(
 
 
 
-@router.get("/thread/{thread_id}/pdfs") # done thing to notic
+@router.get("/thread/{thread_id}/pdfs") # done thing to notice
 def get_thread_pdfs(
     thread_id: str,
     current_user: dict = Depends(get_current_user)

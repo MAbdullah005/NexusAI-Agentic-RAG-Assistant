@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../hooks/useAuth";
 import { api } from "../lib/api/client";
@@ -86,34 +86,23 @@ export default function ChatPage() {
     try {
       setLoadingThreads(true);
       const rawThreads = await api.getThreads();
-      let threadList: Thread[] = (rawThreads || [])
+      const threadList: Thread[] = (rawThreads || [])
         .map((t: any) => ({
           thread_id: String(t.thread_id || t.id || ""),
           title: t.title || "New Chat",
           created_at: t.created_at ? String(t.created_at) : new Date().toISOString(),
+          is_pinned: Boolean(t.is_pinned),
         }))
         .filter((t) => Boolean(t.thread_id));
 
-      if (threadList.length === 0) {
-        // Automatically create an initial conversation thread so activeThreadId is never null
-        const res = await api.createThread();
-        const newThreadId = res.thread_id;
-        const initialThread: Thread = {
-          thread_id: newThreadId,
-          title: "New Chat",
-          created_at: new Date().toISOString(),
-        };
-        threadList = [initialThread];
-      }
-
       setThreads(threadList);
 
-      // Auto-select first thread if none active, or preserve existing active thread if valid
+      // Preserve existing active thread if valid, or select first saved thread if none active
       setActiveThreadId((current) => {
         if (current && threadList.some((t) => t.thread_id === current)) {
           return current;
         }
-        return threadList[0].thread_id;
+        return threadList.length > 0 ? threadList[0].thread_id : null;
       });
     } catch (err) {
       console.error("Failed to load threads:", err);
@@ -179,52 +168,94 @@ export default function ChatPage() {
     }
   };
 
-  // Create new thread
-  const handleNewChat = async () => {
-    try {
-      setCreatingThread(true);
-      const res = await api.createThread();
-      const newThreadId = res.thread_id;
-      const newThread: Thread = {
-        thread_id: newThreadId,
-        title: "New Chat",
-        created_at: new Date().toISOString(),
-      };
-      setThreads((prev) => [newThread, ...prev.filter((t) => t.thread_id !== newThreadId)]);
-      setActiveThreadId(newThreadId);
-      setMessages([]);
-      setDocuments([]);
-      setSelectedDocIds([]);
-      setHitlInterrupt(null);
-      setActivePreviewDoc(null);
-      setActiveMobileTab("chat");
-    } catch (err) {
-      console.error("Failed to create new thread:", err);
-    } finally {
-      setCreatingThread(false);
+  // Helper to ensure an active thread exists (used when uploading files or sending first message)
+  const ensureActiveThread = useCallback(async (): Promise<string> => {
+    if (activeThreadId) return activeThreadId;
+    const res = await api.createThread();
+    const newThreadId = res.thread_id;
+    setActiveThreadId(newThreadId);
+    return newThreadId;
+  }, [activeThreadId]);
+
+  // Start temporary new chat session
+  const handleNewChat = useCallback(() => {
+    // If already in an empty chat session (no messages), keep existing session active
+    if (messages.length === 0 && (!activeThreadId || !threads.some((t) => t.thread_id === activeThreadId))) {
+      return;
     }
-  };
+
+    // Reset to an empty temporary chat session without saving anything to DB or sidebar
+    setActiveThreadId(null);
+    setMessages([]);
+    setDocuments([]);
+    setSelectedDocIds([]);
+    setHitlInterrupt(null);
+    setThreadSummary(null);
+    setActivePreviewDoc(null);
+    setActiveMobileTab("chat");
+  }, [activeThreadId, messages.length, threads]);
+
+  // Rename thread
+  const handleRenameThread = useCallback(async (threadId: string, newTitle: string) => {
+    try {
+      await api.renameThread(threadId, newTitle);
+      setThreads((prev) =>
+        prev.map((t) => (t.thread_id === threadId ? { ...t, title: newTitle } : t))
+      );
+    } catch (err) {
+      console.error("Failed to rename thread:", err);
+    }
+  }, []);
+
+  // Pin / unpin thread
+  const handlePinThread = useCallback(async (threadId: string, pinned: boolean) => {
+    try {
+      await api.pinThread(threadId, pinned);
+      setThreads((prev) => {
+        const updated = prev.map((t) =>
+          t.thread_id === threadId ? { ...t, is_pinned: pinned } : t
+        );
+        return [...updated].sort((a, b) => {
+          if (a.is_pinned && !b.is_pinned) return -1;
+          if (!a.is_pinned && b.is_pinned) return 1;
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        });
+      });
+    } catch (err) {
+      console.error("Failed to pin/unpin thread:", err);
+    }
+  }, []);
+
+  // Delete thread
+  const handleDeleteThread = useCallback(async (threadId: string) => {
+    try {
+      await api.deleteThread(threadId);
+      setThreads((prev) => {
+        const remaining = prev.filter((t) => t.thread_id !== threadId);
+        setActiveThreadId((curr) => {
+          if (curr !== threadId) return curr;
+          return remaining.length > 0 ? remaining[0].thread_id : null;
+        });
+        return remaining;
+      });
+    } catch (err) {
+      console.error("Failed to delete thread:", err);
+    }
+  }, []);
 
   // Send message
   const handleSendMessage = async (text: string) => {
     let currentThreadId = activeThreadId;
+    const isFirstMessage = messages.length === 0;
 
-    // If no thread exists yet, create one first
+    // If no thread exists yet, create one on first question submission
     if (!currentThreadId) {
       try {
         setCreatingThread(true);
-        const res = await api.createThread();
-        const newThreadId = res.thread_id;
-        currentThreadId = newThreadId;
-        const newThread: Thread = {
-          thread_id: newThreadId,
-          title: "New Chat",
-          created_at: new Date().toISOString(),
-        };
-        setThreads((prev) => [newThread, ...prev.filter((t) => t.thread_id !== newThreadId)]);
-        setActiveThreadId(newThreadId);
+        currentThreadId = await ensureActiveThread();
       } catch (err) {
         console.error("Failed to create thread before sending message:", err);
+        setCreatingThread(false);
         return;
       } finally {
         setCreatingThread(false);
@@ -242,6 +273,47 @@ export default function ChatPage() {
     setMessages((prev) => [...prev, userMsg]);
     setPendingMessage(true);
     setHitlInterrupt(null);
+
+    // If this is the first question, generate title and display the conversation in the sidebar
+    if (isFirstMessage && currentThreadId) {
+      const activeId = currentThreadId;
+      api
+        .generateTitle(activeId, user?.user_id || 1, text)
+        .then((res) => {
+          const finalTitle = res.title || text.slice(0, 30).trim() || "New Chat";
+          setThreads((prev) => {
+            const existingIndex = prev.findIndex((t) => t.thread_id === activeId);
+            if (existingIndex >= 0) {
+              return prev.map((t) =>
+                t.thread_id === activeId ? { ...t, title: finalTitle } : t
+              );
+            }
+            const newThreadEntry: Thread = {
+              thread_id: activeId,
+              title: finalTitle,
+              created_at: new Date().toISOString(),
+              is_pinned: false,
+            };
+            return [newThreadEntry, ...prev];
+          });
+        })
+        .catch((e) => {
+          console.warn("Background title generation error:", e);
+          const fallbackTitle = text.slice(0, 30).trim() || "New Chat";
+          setThreads((prev) => {
+            if (prev.some((t) => t.thread_id === activeId)) return prev;
+            return [
+              {
+                thread_id: activeId,
+                title: fallbackTitle,
+                created_at: new Date().toISOString(),
+                is_pinned: false,
+              },
+              ...prev,
+            ];
+          });
+        });
+    }
 
     try {
       const response = await api.sendMessage({
@@ -263,27 +335,6 @@ export default function ChatPage() {
         };
         setMessages((prev) => [...prev, assistantMsg]);
         setPendingMessage(false);
-
-        // Generate dynamic title if this was the first user message in thread
-        const currentThread = threads.find((t) => t.thread_id === currentThreadId);
-        if (
-          user?.user_id &&
-          currentThread &&
-          (currentThread.title === "New Chat" || currentThread.title.startsWith("Chat "))
-        ) {
-          api
-            .generateTitle(currentThreadId, user.user_id, text)
-            .then((res) => {
-              if (res.title) {
-                setThreads((prev) =>
-                  prev.map((t) =>
-                    t.thread_id === currentThreadId ? { ...t, title: res.title } : t
-                  )
-                );
-              }
-            })
-            .catch((e) => console.warn("Background title generation error:", e));
-        }
       }
     } catch (err: any) {
       console.error("Failed to send chat message:", err);
@@ -390,6 +441,9 @@ export default function ChatPage() {
         isOpenMobile={sidebarMobileOpen}
         onCloseMobile={() => setSidebarMobileOpen(false)}
         theme={theme}
+        onRenameThread={handleRenameThread}
+        onPinThread={handlePinThread}
+        onDeleteThread={handleDeleteThread}
       />
 
       {/* Split-Screen Workspace: Chat Container + Source Workspace */}
@@ -435,6 +489,7 @@ export default function ChatPage() {
               selectedDocIds={selectedDocIds}
               onToggleDocSelection={handleToggleDocSelection}
               onSelectAllDocs={handleSelectAllDocs}
+              onEnsureThreadId={ensureActiveThread}
               onSourceAdded={() => {
                 if (activeThreadId) loadThreadDetails(activeThreadId);
               }}
@@ -456,13 +511,14 @@ export default function ChatPage() {
       </div>
 
       {/* Fallback Ingest Source Modal */}
-      {activeThreadId && (
+      {sourceModalOpen && (
         <SourceIngestModal
           open={sourceModalOpen}
           onOpenChange={setSourceModalOpen}
           threadId={activeThreadId}
+          onEnsureThreadId={ensureActiveThread}
           onSourceAdded={() => {
-            loadThreadDetails(activeThreadId);
+            if (activeThreadId) loadThreadDetails(activeThreadId);
           }}
         />
       )}

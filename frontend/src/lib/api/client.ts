@@ -145,6 +145,27 @@ export const api = {
     });
   },
 
+  async renameThread(threadId: string, title: string): Promise<{ thread_id: string; title: string }> {
+    return request<{ thread_id: string; title: string }>(
+      `/thread/${encodeURIComponent(threadId)}/rename`,
+      { method: "PATCH", body: JSON.stringify({ title }) }
+    );
+  },
+
+  async pinThread(threadId: string, pinned: boolean): Promise<{ thread_id: string; is_pinned: boolean }> {
+    return request<{ thread_id: string; is_pinned: boolean }>(
+      `/thread/${encodeURIComponent(threadId)}/pin`,
+      { method: "PATCH", body: JSON.stringify({ pinned }) }
+    );
+  },
+
+  async deleteThread(threadId: string): Promise<{ deleted: boolean; thread_id: string }> {
+    return request<{ deleted: boolean; thread_id: string }>(
+      `/thread/${encodeURIComponent(threadId)}`,
+      { method: "DELETE" }
+    );
+  },
+
   async getThreadDetails(threadId: string): Promise<ThreadDetails> {
     return request<ThreadDetails>(`/thread/${encodeURIComponent(threadId)}/details`);
   },

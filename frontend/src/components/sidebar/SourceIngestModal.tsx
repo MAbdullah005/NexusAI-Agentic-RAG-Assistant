@@ -11,7 +11,8 @@ import { Input } from "../ui/input";
 interface SourceIngestModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  threadId: string;
+  threadId?: string | null;
+  onEnsureThreadId?: () => Promise<string>;
   onSourceAdded?: () => void;
 }
 
@@ -19,6 +20,7 @@ export function SourceIngestModal({
   open,
   onOpenChange,
   threadId,
+  onEnsureThreadId,
   onSourceAdded,
 }: SourceIngestModalProps) {
   const [activeTab, setActiveTab] = useState<string>("pdf");
@@ -62,6 +64,18 @@ export function SourceIngestModal({
     setRepoError(null);
   };
 
+  const getTargetThreadId = async (): Promise<string | null> => {
+    if (threadId) return threadId;
+    if (onEnsureThreadId) {
+      try {
+        return await onEnsureThreadId();
+      } catch (err) {
+        console.error("Failed to ensure thread:", err);
+      }
+    }
+    return null;
+  };
+
   const handleUploadPdf = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedFile) {
@@ -73,7 +87,12 @@ export function SourceIngestModal({
       setPdfLoading(true);
       setPdfError(null);
       setPdfSuccess(null);
-      const res = await api.uploadPdf(selectedFile, threadId);
+      const targetThreadId = await getTargetThreadId();
+      if (!targetThreadId) {
+        setPdfError("Please select or start a conversation first.");
+        return;
+      }
+      const res = await api.uploadPdf(selectedFile, targetThreadId);
       setPdfSuccess(`PDF ingested successfully! (${res.status})`);
       setSelectedFile(null);
       onSourceAdded?.();
@@ -95,7 +114,12 @@ export function SourceIngestModal({
       setYtLoading(true);
       setYtError(null);
       setYtSuccess(null);
-      const res = await api.setYoutube(youtubeUrl.trim(), threadId);
+      const targetThreadId = await getTargetThreadId();
+      if (!targetThreadId) {
+        setYtError("Please select or start a conversation first.");
+        return;
+      }
+      const res = await api.setYoutube(youtubeUrl.trim(), targetThreadId);
       setYtSuccess(`YouTube transcript indexed successfully! (${res.status})`);
       setYoutubeUrl("");
       onSourceAdded?.();
@@ -117,7 +141,12 @@ export function SourceIngestModal({
       setWebLoading(true);
       setWebError(null);
       setWebSuccess(null);
-      const res = await api.uploadUrl(webUrl.trim(), threadId);
+      const targetThreadId = await getTargetThreadId();
+      if (!targetThreadId) {
+        setWebError("Please select or start a conversation first.");
+        return;
+      }
+      const res = await api.uploadUrl(webUrl.trim(), targetThreadId);
       setWebSuccess(`Web page "${res.title || 'Source'}" indexed successfully!`);
       setWebUrl("");
       onSourceAdded?.();
@@ -143,7 +172,12 @@ export function SourceIngestModal({
       setRepoLoading(true);
       setRepoError(null);
       setRepoSuccess(null);
-      const res = await api.uploadRepo(repoUrl.trim(), threadId);
+      const targetThreadId = await getTargetThreadId();
+      if (!targetThreadId) {
+        setRepoError("Please select or start a conversation first.");
+        return;
+      }
+      const res = await api.uploadRepo(repoUrl.trim(), targetThreadId);
       setRepoSuccess(res.message || `GitHub repository indexed (${res.file_count || 0} files)!`);
       setRepoUrl("");
       onSourceAdded?.();

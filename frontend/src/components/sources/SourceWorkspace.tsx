@@ -39,6 +39,7 @@ interface SourceWorkspaceProps {
   onToggleDocSelection: (docId: string) => void;
   onSelectAllDocs: (selectAll: boolean) => void;
   onSourceAdded: () => void;
+  onEnsureThreadId?: () => Promise<string>;
   activePreviewDoc: AttachedDocument | null;
   previewPage?: number | string;
   onSelectPreviewDoc: (doc: AttachedDocument | null, page?: number | string) => void;
@@ -54,6 +55,7 @@ export function SourceWorkspace({
   onToggleDocSelection,
   onSelectAllDocs,
   onSourceAdded,
+  onEnsureThreadId,
   activePreviewDoc,
   previewPage,
   onSelectPreviewDoc,
@@ -119,10 +121,24 @@ export function SourceWorkspace({
     };
   }, [threadId, activePreviewDoc]);
 
+  // Helper to get active thread or create a draft thread for document ingestion
+  const getTargetThreadId = async (): Promise<string | null> => {
+    if (threadId) return threadId;
+    if (onEnsureThreadId) {
+      try {
+        return await onEnsureThreadId();
+      } catch (err) {
+        console.error("Failed to ensure thread:", err);
+      }
+    }
+    return null;
+  };
+
   // Handle PDF Upload (supports single or multiple files)
   const handleUploadPdf = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!threadId) {
+    const targetThreadId = await getTargetThreadId();
+    if (!targetThreadId) {
       setPdfStatus({ error: "Please select or create a conversation thread first." });
       return;
     }
@@ -138,7 +154,7 @@ export function SourceWorkspace({
       let successCount = 0;
       for (let i = 0; i < pdfFiles.length; i++) {
         const file = pdfFiles[i];
-        await api.uploadPdf(file, threadId);
+        await api.uploadPdf(file, targetThreadId);
         successCount++;
       }
 
@@ -161,7 +177,8 @@ export function SourceWorkspace({
   // Handle YouTube Indexing
   const handleSetYoutube = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!threadId) {
+    const targetThreadId = await getTargetThreadId();
+    if (!targetThreadId) {
       setYtStatus({ error: "Please select or create a conversation thread first." });
       return;
     }
@@ -173,7 +190,7 @@ export function SourceWorkspace({
     try {
       setYtLoading(true);
       setYtStatus(null);
-      const res = await api.setYoutube(youtubeUrl.trim(), threadId);
+      const res = await api.setYoutube(youtubeUrl.trim(), targetThreadId);
       setYtStatus({
         success: `YouTube transcript indexed successfully (${res.status})!`,
       });
@@ -189,7 +206,8 @@ export function SourceWorkspace({
   // Handle Web Page Indexing
   const handleUploadWebUrl = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!threadId) {
+    const targetThreadId = await getTargetThreadId();
+    if (!targetThreadId) {
       setWebStatus({ error: "Please select or create a conversation thread first." });
       return;
     }
@@ -201,7 +219,7 @@ export function SourceWorkspace({
     try {
       setWebLoading(true);
       setWebStatus(null);
-      const res = await api.uploadUrl(webUrl.trim(), threadId);
+      const res = await api.uploadUrl(webUrl.trim(), targetThreadId);
       setWebStatus({
         success: `Web page "${res.title || "Article"}" indexed successfully!`,
       });
@@ -217,7 +235,8 @@ export function SourceWorkspace({
   // Handle GitHub Repo Indexing via RepoGuide
   const handleUploadRepo = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!threadId) {
+    const targetThreadId = await getTargetThreadId();
+    if (!targetThreadId) {
       setRepoStatus({ error: "Please select or create a conversation thread first." });
       return;
     }
@@ -233,7 +252,7 @@ export function SourceWorkspace({
     try {
       setRepoLoading(true);
       setRepoStatus(null);
-      const res = await api.uploadRepo(repoUrl.trim(), threadId);
+      const res = await api.uploadRepo(repoUrl.trim(), targetThreadId);
       setRepoStatus({
         success: res.message || `GitHub repository indexed (${res.file_count || 0} files)!`,
       });

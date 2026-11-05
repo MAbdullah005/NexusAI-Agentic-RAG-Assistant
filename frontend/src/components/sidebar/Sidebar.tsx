@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import {
   Bot,
   Plus,
@@ -13,6 +13,13 @@ import {
   ChevronRight,
   ShieldCheck,
   FolderOpen,
+  MoreHorizontal,
+  Pencil,
+  Pin,
+  PinOff,
+  Trash2,
+  Check,
+  X,
 } from "lucide-react";
 import { cn, formatDateLabel } from "../../lib/utils";
 import { Button } from "../ui/button";
@@ -32,6 +39,9 @@ interface SidebarProps {
   isOpenMobile?: boolean;
   onCloseMobile?: () => void;
   theme?: "light" | "dark";
+  onRenameThread?: (threadId: string, newTitle: string) => void;
+  onPinThread?: (threadId: string, pinned: boolean) => void;
+  onDeleteThread?: (threadId: string) => void;
 }
 
 export function Sidebar({
@@ -46,10 +56,63 @@ export function Sidebar({
   isOpenMobile = false,
   onCloseMobile,
   theme = "light",
+  onRenameThread,
+  onPinThread,
+  onDeleteThread,
 }: SidebarProps) {
   const { user, logout } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const isLight = theme === "light";
+
+  // Menu / rename / delete state
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const deleteConfirmRef = useRef<HTMLDivElement>(null);
+  const renameInputRef = useRef<HTMLInputElement>(null);
+
+  // Close menu and delete confirmation on outside click or Escape
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setOpenMenuId(null);
+      }
+      if (deleteConfirmRef.current && !deleteConfirmRef.current.contains(e.target as Node)) {
+        setDeleteConfirmId(null);
+      }
+    };
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setOpenMenuId(null);
+        setRenamingId(null);
+        setDeleteConfirmId(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("keydown", handleKey);
+    };
+  }, []);
+
+  // Auto-focus rename input when it appears
+  useEffect(() => {
+    if (renamingId && renameInputRef.current) {
+      renameInputRef.current.focus();
+      renameInputRef.current.select();
+    }
+  }, [renamingId]);
+
+  const commitRename = (threadId: string) => {
+    const trimmed = renameValue.trim();
+    if (trimmed && trimmed !== threads.find((t) => t.thread_id === threadId)?.title) {
+      onRenameThread?.(threadId, trimmed);
+    }
+    setRenamingId(null);
+  };
 
   // Filter threads by search query
   const filteredThreads = useMemo(() => {
@@ -58,10 +121,20 @@ export function Sidebar({
     return threads.filter((t) => t.title?.toLowerCase().includes(q));
   }, [threads, searchQuery]);
 
-  // Group threads chronologically
+  // Separate pinned and unpinned
+  const pinnedThreads = useMemo(
+    () => filteredThreads.filter((t) => t.is_pinned),
+    [filteredThreads]
+  );
+  const unpinnedThreads = useMemo(
+    () => filteredThreads.filter((t) => !t.is_pinned),
+    [filteredThreads]
+  );
+
+  // Group unpinned threads chronologically
   const groupedThreads = useMemo(() => {
     const groups: Record<string, Thread[]> = {};
-    for (const thread of filteredThreads) {
+    for (const thread of unpinnedThreads) {
       const label = formatDateLabel(thread.created_at);
       if (!groups[label]) {
         groups[label] = [];
@@ -69,9 +142,229 @@ export function Sidebar({
       groups[label].push(thread);
     }
     return groups;
-  }, [filteredThreads]);
+  }, [unpinnedThreads]);
 
   const groupOrder = ["Today", "Yesterday", "Previous 7 Days", "Previous 30 Days", "Older", "Earlier"];
+
+  // Render a single thread row (shared between pinned + grouped sections)
+  const renderThreadItem = (t: Thread) => {
+    const isActive = t.thread_id === activeThreadId;
+    const isMenuOpen = openMenuId === t.thread_id;
+    const isRenaming = renamingId === t.thread_id;
+    const isConfirmingDelete = deleteConfirmId === t.thread_id;
+
+    return (
+      <div key={t.thread_id} className="relative group/item">
+        {/* Main thread button */}
+        <button
+          onClick={() => {
+            if (isRenaming || isConfirmingDelete) return;
+            onSelectThread(t.thread_id);
+            onCloseMobile?.();
+          }}
+          className={cn(
+            "flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-xs transition-all",
+            isActive
+              ? isLight
+                ? "bg-pink-50 text-pink-700 font-semibold border border-pink-200/80 shadow-xs"
+                : "bg-pink-500/15 text-pink-300 font-medium border border-pink-500/30"
+              : isLight
+              ? "text-slate-600 hover:bg-pink-50/50 hover:text-slate-900"
+              : "text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-200"
+          )}
+        >
+          <MessageSquare
+            className={cn(
+              "h-3.5 w-3.5 shrink-0",
+              isActive
+                ? "text-pink-500"
+                : isLight
+                ? "text-slate-400 group-hover/item:text-pink-500"
+                : "text-zinc-400 group-hover/item:text-zinc-300"
+            )}
+          />
+
+          {/* Title or rename input */}
+          {isRenaming ? (
+            <input
+              ref={renameInputRef}
+              value={renameValue}
+              onChange={(e) => setRenameValue(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") commitRename(t.thread_id);
+                if (e.key === "Escape") setRenamingId(null);
+                e.stopPropagation();
+              }}
+              onBlur={() => commitRename(t.thread_id)}
+              onClick={(e) => e.stopPropagation()}
+              className={cn(
+                "flex-1 min-w-0 bg-transparent border-b outline-none text-xs",
+                isLight ? "border-pink-400 text-slate-900" : "border-pink-400 text-white"
+              )}
+            />
+          ) : (
+            <span className="truncate flex-1 pr-6">{t.title || "Untitled Chat"}</span>
+          )}
+
+          {/* Pinned indicator */}
+          {t.is_pinned && !isRenaming && (
+            <Pin
+              className={cn(
+                "h-3 w-3 shrink-0 group-hover/item:hidden",
+                isLight ? "text-pink-500" : "text-pink-400"
+              )}
+            />
+          )}
+
+          {/* Active dot (hide when menu button is shown) */}
+          {isActive && !isRenaming && (
+            <div className="h-1.5 w-1.5 rounded-full bg-pink-500 shrink-0 group-hover/item:hidden" />
+          )}
+        </button>
+
+        {/* Three-dot menu button — shown on hover */}
+        {!isRenaming && !isConfirmingDelete && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setOpenMenuId(isMenuOpen ? null : t.thread_id);
+            }}
+            title="More options"
+            className={cn(
+              "absolute right-1.5 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-lg transition-all",
+              "opacity-0 group-hover/item:opacity-100",
+              isMenuOpen ? "opacity-100" : "",
+              isLight
+                ? "text-slate-500 hover:bg-pink-100 hover:text-slate-800"
+                : "text-zinc-500 hover:bg-zinc-700 hover:text-zinc-200"
+            )}
+          >
+            <MoreHorizontal className="h-3.5 w-3.5" />
+          </button>
+        )}
+
+        {/* Dropdown menu */}
+        {isMenuOpen && (
+          <div
+            ref={menuRef}
+            className={cn(
+              "absolute right-1 top-8 z-50 w-36 rounded-xl border shadow-xl py-1 overflow-hidden",
+              isLight
+                ? "bg-white border-pink-100 shadow-pink-100/50"
+                : "bg-zinc-900 border-zinc-700/80 shadow-black/40"
+            )}
+          >
+            {/* Rename */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setRenamingId(t.thread_id);
+                setRenameValue(t.title || "");
+                setOpenMenuId(null);
+              }}
+              className={cn(
+                "flex items-center gap-2 w-full px-3 py-1.5 text-xs text-left transition-colors",
+                isLight
+                  ? "text-slate-700 hover:bg-pink-50 hover:text-slate-900"
+                  : "text-zinc-300 hover:bg-zinc-800 hover:text-white"
+              )}
+            >
+              <Pencil className="h-3.5 w-3.5" />
+              Rename
+            </button>
+
+            {/* Pin / Unpin */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onPinThread?.(t.thread_id, !t.is_pinned);
+                setOpenMenuId(null);
+              }}
+              className={cn(
+                "flex items-center gap-2 w-full px-3 py-1.5 text-xs text-left transition-colors",
+                isLight
+                  ? "text-slate-700 hover:bg-pink-50 hover:text-slate-900"
+                  : "text-zinc-300 hover:bg-zinc-800 hover:text-white"
+              )}
+            >
+              {t.is_pinned ? (
+                <PinOff className="h-3.5 w-3.5" />
+              ) : (
+                <Pin className="h-3.5 w-3.5" />
+              )}
+              {t.is_pinned ? "Unpin" : "Pin"}
+            </button>
+
+            {/* Divider */}
+            <div
+              className={cn(
+                "my-1 border-t",
+                isLight ? "border-pink-100" : "border-zinc-700/60"
+              )}
+            />
+
+            {/* Delete */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setDeleteConfirmId(t.thread_id);
+                setOpenMenuId(null);
+              }}
+              className={cn(
+                "flex items-center gap-2 w-full px-3 py-1.5 text-xs text-left transition-colors",
+                "text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10"
+              )}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              Delete
+            </button>
+          </div>
+        )}
+
+        {/* Inline delete confirmation */}
+        {isConfirmingDelete && (
+          <div
+            ref={deleteConfirmRef}
+            className={cn(
+              "mx-1 mt-0.5 mb-1 flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-[11px]",
+              isLight
+                ? "bg-rose-50 border border-rose-200 text-rose-700"
+                : "bg-rose-500/10 border border-rose-500/30 text-rose-300"
+            )}
+          >
+            <Trash2 className="h-3 w-3 shrink-0" />
+            <span className="flex-1">Delete this chat?</span>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDeleteThread?.(t.thread_id);
+                setDeleteConfirmId(null);
+              }}
+              title="Confirm delete"
+              className="rounded px-1.5 py-0.5 bg-rose-500 text-white hover:bg-rose-600 transition-colors"
+            >
+              Yes
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setDeleteConfirmId(null);
+              }}
+              title="Cancel"
+              className={cn(
+                "rounded px-1.5 py-0.5 transition-colors",
+                isLight
+                  ? "bg-slate-200 text-slate-700 hover:bg-slate-300"
+                  : "bg-zinc-700 text-zinc-200 hover:bg-zinc-600"
+              )}
+            >
+              No
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <>
@@ -160,62 +453,47 @@ export function Sidebar({
               {searchQuery ? "No matching conversations." : "No conversations yet."}
             </div>
           ) : (
-            groupOrder.map((group) => {
-              const items = groupedThreads[group];
-              if (!items || items.length === 0) return null;
-
-              return (
-                <div key={group} className="space-y-1">
+            <>
+              {/* Pinned section */}
+              {pinnedThreads.length > 0 && (
+                <div className="space-y-1">
                   <h4
                     className={cn(
-                      "px-2.5 text-[11px] font-semibold tracking-wider uppercase",
-                      isLight ? "text-slate-400" : "text-zinc-500"
+                      "flex items-center gap-1.5 px-2.5 text-[11px] font-semibold tracking-wider uppercase",
+                      isLight ? "text-pink-500" : "text-pink-400"
                     )}
                   >
-                    {group}
+                    <Pin className="h-3 w-3" />
+                    Pinned
                   </h4>
                   <div className="space-y-0.5">
-                    {items.map((t) => {
-                      const isActive = t.thread_id === activeThreadId;
-                      return (
-                        <button
-                          key={t.thread_id}
-                          onClick={() => {
-                            onSelectThread(t.thread_id);
-                            onCloseMobile?.();
-                          }}
-                          className={cn(
-                            "flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-xs transition-all group",
-                            isActive
-                              ? isLight
-                                ? "bg-pink-50 text-pink-700 font-semibold border border-pink-200/80 shadow-xs"
-                                : "bg-pink-500/15 text-pink-300 font-medium border border-pink-500/30"
-                              : isLight
-                              ? "text-slate-600 hover:bg-pink-50/50 hover:text-slate-900"
-                              : "text-zinc-400 hover:bg-zinc-850 hover:text-zinc-200"
-                          )}
-                        >
-                          <MessageSquare
-                            className={cn(
-                              "h-3.5 w-3.5 shrink-0",
-                              isActive
-                                ? "text-pink-500"
-                                : isLight
-                                ? "text-slate-400 group-hover:text-pink-500"
-                                : "text-zinc-400 group-hover:text-zinc-300"
-                            )}
-                          />
-                          <span className="truncate flex-1">{t.title || "Untitled Chat"}</span>
-                          {isActive && (
-                            <div className="h-1.5 w-1.5 rounded-full bg-pink-500 shrink-0" />
-                          )}
-                        </button>
-                      );
-                    })}
+                    {pinnedThreads.map((t) => renderThreadItem(t))}
                   </div>
                 </div>
-              );
-            })
+              )}
+
+              {/* Date-grouped unpinned threads */}
+              {groupOrder.map((group) => {
+                const items = groupedThreads[group];
+                if (!items || items.length === 0) return null;
+
+                return (
+                  <div key={group} className="space-y-1">
+                    <h4
+                      className={cn(
+                        "px-2.5 text-[11px] font-semibold tracking-wider uppercase",
+                        isLight ? "text-slate-400" : "text-zinc-500"
+                      )}
+                    >
+                      {group}
+                    </h4>
+                    <div className="space-y-0.5">
+                      {items.map((t) => renderThreadItem(t))}
+                    </div>
+                  </div>
+                );
+              })}
+            </>
           )}
         </div>
 
