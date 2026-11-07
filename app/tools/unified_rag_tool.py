@@ -88,6 +88,14 @@ def unified_rag_tool(
 
         docs = retriever.invoke(query)
 
+        if not docs:
+            # Fallback retry with conversational filler words stripped
+            import re
+            clean_q = re.sub(r"^(can you|could you|please|what is|what are|tell me about|explain|describe)\s+", "", query.strip(), flags=re.IGNORECASE)
+            if clean_q and clean_q.lower() != query.strip().lower() and len(clean_q.strip()) >= 3:
+                logger.info(f"[RAG] Fallback retrieval attempt with cleaned query: '{clean_q}'")
+                docs = retriever.invoke(clean_q.strip())
+
         print(
             f"[RAG] Docs retrieved: "
             f"{len(docs) if docs else 0}"

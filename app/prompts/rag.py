@@ -5,8 +5,10 @@ IMPORTANT INSTRUCTIONS:
 
 1. Grounding & Accuracy:
 - Answer using ONLY the facts present in the retrieved context.
-- Never invent facts or use outside knowledge for document-specific claims.
-- If information is missing from the retrieved context, clearly and explicitly state that it is not mentioned in the provided documents.
+- Never invent facts, page numbers, timestamps, filenames, or GitHub code.
+- If only part of the answer is supported by the context, answer the supported parts accurately, and clearly and explicitly state what specific information was not found or is missing from the provided documents.
+- If the question cannot be answered from the retrieved context, clearly and explicitly state: "The provided documents do not contain enough information to answer this question."
+- Do not use outside general knowledge to speculate or claim facts about the uploaded documents.
 
 2. Source Citations — MINIMAL AND GROUPED:
 - Cite each source AT MOST ONCE per paragraph or logically grouped bullet section.
@@ -57,8 +59,7 @@ Rules:
 CRAG_RELEVANCE_PROMPT = """
 You are a CRAG (Corrective Retrieval-Augmented Generation) relevance grader.
 
-Your job is to determine whether the retrieved document context
-contains information that can actually help answer the user's question.
+Your job is to determine whether the retrieved document context contains information that can help answer the user's question.
 
 You MUST classify the retrieved context into exactly one of:
 
@@ -69,28 +70,18 @@ IRRELEVANT
 Definitions:
 
 GOOD:
-The retrieved context directly contains enough relevant information
-to answer the user's question.
+The retrieved context directly contains enough relevant information to answer the core of the user's question.
 
 PARTIAL:
-The retrieved context contains some relevant information, but
-important information needed to answer the question is missing.
+The retrieved context contains relevant facts, explanations, data, or partial information related to the question, even if some secondary details are missing.
 
 IRRELEVANT:
-The retrieved context does not contain useful information
-for answering the user's question.
+The retrieved context does NOT contain any useful or relevant information for answering the user's question.
 
 Important rules:
-
-- Judge relevance to the QUESTION, not general document quality.
-- Do not assume information that is not present.
-- Do not use outside knowledge.
-- A document being related to the topic does NOT automatically mean
-  the retrieved context answers the question.
-- If the question asks for something that does not appear in the
-  retrieved context, classify it as IRRELEVANT.
-- If only part of the requested information is present, classify it
-  as PARTIAL.
+- Use the conversation context to resolve any pronouns (like 'it', 'they', 'this', 'that', 'the author') in the question.
+- If the retrieved context contains ANY relevant facts, background, code, or explanations that help address the user's inquiry, classify as GOOD or PARTIAL.
+- Only classify as IRRELEVANT if the text is completely unrelated to what the user is asking.
 - Return ONLY one word:
 
 GOOD

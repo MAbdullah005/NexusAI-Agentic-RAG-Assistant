@@ -165,9 +165,10 @@ def chat_node(state: ChatState, config=None):
         metadata_str = (
             f"Total attached documents: {len(sources_list)}\n"
             + "\n".join(docs_lines)
-            + "\n\nCRITICAL INSTRUCTION: The user has attached the above sources to this conversation thread. "
-            "When the user asks any question about them, you MUST call `unified_rag_tool` to retrieve the relevant content before answering. "
-            "NEVER claim that you cannot access them or that no document is attached."
+            + "\n\nCRITICAL INSTRUCTIONS FOR ATTACHED DOCUMENTS:\n"
+            "1. When the user asks any question related to the attached sources, you MUST call `unified_rag_tool` to retrieve the relevant content before answering.\n"
+            "2. For follow-up questions (e.g. 'What about its results?', 'How does it compare?', 'Explain section 2'), ALWAYS formulate a self-contained search query for `unified_rag_tool` that resolves pronouns ('it', 'this', 'they') with the specific document title, system name, or topic from earlier turns.\n"
+            "3. NEVER claim that you cannot access the attached sources or that no document is attached."
         )
     else:
         metadata_str = "No documents currently attached to this thread."
@@ -196,7 +197,3 @@ def chat_node(state: ChatState, config=None):
     return {
         "messages": [response]
     }
-
-
-
-

@@ -1,13 +1,13 @@
-from fastapi import APIRouter, UploadFile, File,Depends
+from fastapi import APIRouter, UploadFile, File, Depends, Form, HTTPException
 import uuid
-from fastapi import Form
-from fastapi.responses import FileResponse
-from app.services.youtube_loader import extract_video_id
-from app.core.retriever import clear_thread_retriever_cache
 import os
 import sqlite3
-from fastapi import UploadFile, File, Form
-from fastapi.responses import FileResponse
+import asyncio
+import json
+import queue
+from fastapi.responses import FileResponse, StreamingResponse
+from app.services.youtube_loader import extract_video_id
+from app.core.retriever import clear_thread_retriever_cache
 from langchain_core.messages import HumanMessage
 from langgraph.types import Command
 from app.services.youtube_ingest import ingest_youtube
@@ -16,6 +16,7 @@ from app.auth.dependencies import get_current_user
 from app.utils.logger import get_logger
 from app.core.retriever import thread_document_metadata
 from app.graph.agent_graph import chatbot
+from app.graph.research_graph import research_graph
 from app.schemas.resume_chat import HITLResumeRequest
 from app.services.pdf_ingest import ingest_pdf
 from app.utils.common import extract_ai_text
@@ -115,6 +116,43 @@ async def chat_endpoint(
             status_code=400,
             detail=str(e)
         )
+
+    # ========================================================
+    # DEEP RESEARCH MODE (SYNC FALLBACK IN /chat)
+    # ========================================================
+
+    if data.get("deep_research") or data.get("is_research"):
+        try:
+            logger.info(f"[CHAT API] Executing Deep Research for thread {thread_id}")
+            research_res = research_graph.invoke({
+                "query": user_input,
+                "thread_id": thread_id,
+                "user_id": user_id,
+                "selected_doc_ids": selected_doc_ids,
+                "config": data.get("config", {}),
+            })
+            final_report = research_res.get("final_report", "⚠️ No research report generated.")
+            save_message(
+                thread_id=thread_id,
+                user_id=user_id,
+                role="assistant",
+                content=final_report,
+                message_id=assistant_mid,
+                strict=True,
+            )
+            return {
+                "status": "completed",
+                "thread_id": thread_id,
+                "response": final_report,
+                "sources": research_res.get("sources_summary", []),
+                "sub_queries": research_res.get("sub_queries", []),
+            }
+        except Exception as e:
+            logger.error(f"[CHAT API] Deep Research execution failed for thread {thread_id}: {e}", exc_info=True)
+            raise HTTPException(
+                status_code=500,
+                detail=f"Deep research execution failed: {str(e)}"
+            )
 
     # ========================================================
     # LANGGRAPH CONFIsG
@@ -251,6 +289,262 @@ async def chat_endpoint(
         "thread_id": thread_id,
         "response": ai_response,
     }
+
+
+# ========================================================
+# Deep Research Endpoints
+# ========================================================
+
+@router.post("/chat/research")
+async def chat_research_endpoint(
+    data: dict,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Execute Deep Research synchronously and return the final report with sources.
+    """
+    user_id = current_user["user_id"]
+    query = data.get("message")
+    thread_id = data.get("thread_id")
+    client_message_id = data.get("client_message_id") or data.get("message_id")
+    selected_doc_ids = data.get("selected_doc_ids")
+    config = data.get("config") or {}
+
+    if not query or not thread_id:
+        raise HTTPException(
+            status_code=400,
+            detail="message and thread_id are required."
+        )
+
+    if not verify_thread_ownership(thread_id, user_id):
+        raise HTTPException(
+            status_code=404,
+            detail="Thread not found"
+        )
+
+    user_mid = client_message_id or str(uuid.uuid4())
+    assistant_mid = f"resp_{user_mid}"
+
+    # Check idempotency
+    if client_message_id:
+        with get_db_connection() as idem_conn:
+            cursor = idem_conn.cursor()
+            cursor.execute(
+                """
+                SELECT content
+                FROM messages
+                WHERE message_id = ? AND thread_id = ? AND user_id = ? AND role = 'assistant'
+                """,
+                (assistant_mid, thread_id, user_id)
+            )
+            cached_resp = cursor.fetchone()
+        if cached_resp:
+            logger.info(f"[RESEARCH API] Returning cached idempotent response for message_id={client_message_id}")
+            return {
+                "status": "completed",
+                "thread_id": thread_id,
+                "response": cached_resp[0],
+            }
+
+    # Persist user question upfront
+    try:
+        save_message(
+            thread_id=thread_id,
+            user_id=user_id,
+            role="user",
+            content=query,
+            message_id=user_mid,
+            strict=True,
+        )
+    except ValueError as e:
+        logger.error(f"[RESEARCH API] Failed to save user question: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+    try:
+        initial_state = {
+            "query": query,
+            "thread_id": thread_id,
+            "user_id": user_id,
+            "selected_doc_ids": selected_doc_ids,
+            "config": config,
+        }
+        result = await asyncio.to_thread(research_graph.invoke, initial_state)
+        final_report = result.get("final_report", "⚠️ No research report generated.")
+
+        # Persist assistant report
+        save_message(
+            thread_id=thread_id,
+            user_id=user_id,
+            role="assistant",
+            content=final_report,
+            message_id=assistant_mid,
+            strict=True,
+        )
+
+        return {
+            "status": "completed",
+            "thread_id": thread_id,
+            "response": final_report,
+            "sources": result.get("sources_summary", []),
+            "sub_queries": result.get("sub_queries", []),
+        }
+    except Exception as e:
+        logger.error(f"[RESEARCH API] Deep research failed for thread {thread_id}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Research execution failed: {str(e)}"
+        )
+
+
+@router.post("/chat/research/stream")
+async def chat_research_stream_endpoint(
+    data: dict,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Stream Deep Research live stages via Server-Sent Events (SSE).
+    Stages: planning -> searching -> extracting -> filtering -> generating -> completed.
+    """
+    user_id = current_user["user_id"]
+    query = data.get("message")
+    thread_id = data.get("thread_id")
+    client_message_id = data.get("client_message_id") or data.get("message_id")
+    selected_doc_ids = data.get("selected_doc_ids")
+    config = data.get("config") or {}
+
+    if not query or not thread_id:
+        raise HTTPException(
+            status_code=400,
+            detail="message and thread_id are required."
+        )
+
+    if not verify_thread_ownership(thread_id, user_id):
+        raise HTTPException(
+            status_code=404,
+            detail="Thread not found"
+        )
+
+    user_mid = client_message_id or str(uuid.uuid4())
+    assistant_mid = f"resp_{user_mid}"
+
+    # Persist user question upfront
+    try:
+        save_message(
+            thread_id=thread_id,
+            user_id=user_id,
+            role="user",
+            content=query,
+            message_id=user_mid,
+            strict=True,
+        )
+    except ValueError as e:
+        logger.error(f"[RESEARCH STREAM] Failed to save user question: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+    async def event_generator():
+        initial_state = {
+            "query": query,
+            "thread_id": thread_id,
+            "user_id": user_id,
+            "selected_doc_ids": selected_doc_ids,
+            "config": config,
+        }
+
+        # Initial event
+        yield f"data: {json.dumps({'stage': 'planning', 'stage_message': 'Initializing Deep Research planner...'})}\n\n"
+
+        q: queue.Queue = queue.Queue()
+
+        def stream_worker():
+            try:
+                for step in research_graph.stream(initial_state):
+                    q.put(("step", step))
+                q.put(("done", None))
+            except Exception as exc:
+                q.put(("error", str(exc)))
+
+        loop = asyncio.get_running_loop()
+        loop.run_in_executor(None, stream_worker)
+
+        all_sources = []
+        sub_queries = []
+
+        while True:
+            try:
+                item_type, item_data = q.get_nowait()
+            except queue.Empty:
+                await asyncio.sleep(0.1)
+                continue
+
+            if item_type == "error":
+                logger.error(f"[RESEARCH STREAM] Execution error: {item_data}")
+                err_payload = {
+                    "stage": "error",
+                    "stage_message": f"Research error: {item_data}",
+                }
+                yield f"data: {json.dumps(err_payload)}\n\n"
+                break
+
+            elif item_type == "done":
+                break
+
+            elif item_type == "step":
+                step = item_data
+                for node_name, node_output in step.items():
+                    stage = node_output.get("stage", node_name)
+                    msg = node_output.get("stage_message", "")
+
+                    if "sub_queries" in node_output:
+                        sub_queries = node_output["sub_queries"]
+
+                    if "sources_summary" in node_output:
+                        all_sources = node_output["sources_summary"]
+
+                    payload = {
+                        "stage": stage,
+                        "stage_message": msg,
+                        "sub_queries": sub_queries,
+                        "sources": all_sources,
+                    }
+
+                    if "filtered_evidence" in node_output:
+                        payload["evidence_count"] = len(node_output["filtered_evidence"])
+                        yield f"data: {json.dumps(payload)}\n\n"
+                        # Signal transition into report generation
+                        yield f"data: {json.dumps({'stage': 'generating', 'stage_message': 'Synthesizing evidence and generating comprehensive report...', 'sources': all_sources, 'sub_queries': sub_queries})}\n\n"
+                        continue
+
+                    if "final_report" in node_output:
+                        final_report = node_output["final_report"]
+                        try:
+                            save_message(
+                                thread_id=thread_id,
+                                user_id=user_id,
+                                role="assistant",
+                                content=final_report,
+                                message_id=assistant_mid,
+                                strict=True,
+                            )
+                        except Exception as e:
+                            logger.error(f"[RESEARCH STREAM] Failed to save assistant report: {e}")
+
+                        payload["report"] = final_report
+                        payload["stage"] = "completed"
+
+                    yield f"data: {json.dumps(payload)}\n\n"
+
+        yield f"data: [DONE]\n\n"
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        }
+    )
+
 
 #  Threads 
 

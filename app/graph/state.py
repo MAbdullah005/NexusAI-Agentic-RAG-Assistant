@@ -30,3 +30,5 @@ class ChatState(TypedDict, total=False):
     answer_source: str
 
     retrieved_docs: List[Dict[str, Any]]
+
+    rag_retry_count: int

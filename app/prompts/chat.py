@@ -15,6 +15,11 @@ or attached web/blog articles and URLs.
 If the question refers to information that may exist
 inside attached sources or uploaded documents, ALWAYS use unified_rag_tool.
 
+Query Formulation Rules for unified_rag_tool:
+- Formulate a clear, self-contained, descriptive search query.
+- If the user's question is a follow-up or uses pronouns/coreferences (e.g., "it", "they", "this", "that", "the author", "the model"), resolve them using the conversation history so the query contains the specific entity, topic, or document name.
+- Include key technical terms, concepts, or sections relevant to what the user is asking about.
+
 Examples:
 
 - Summarize the uploaded document or PDF.

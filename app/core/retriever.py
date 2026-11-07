@@ -146,15 +146,12 @@ def get_thread_retriever(
         print("-" * 60)
 
         if not os.path.exists(path):
-
             print(
-                f"⚠️ Vectorstore does not exist: {path}"
+                f"[WARN] Vectorstore does not exist: {path}"
             )
-
             continue
 
         try:
-
             vs = FAISS.load_local(
                 path,
                 embeddings,
@@ -162,7 +159,7 @@ def get_thread_retriever(
             )
 
             print(
-                f"✅ Loaded vectorstore: {doc_id}"
+                f"[SUCCESS] Loaded vectorstore: {doc_id}"
             )
 
             for doc in vs.docstore._dict.values():
@@ -183,12 +180,9 @@ def get_thread_retriever(
             vectorstores.append(vs)
 
         except Exception as e:
-
             print(
-                f"❌ Failed loading vectorstore:"
-                f" {doc_id}"
+                f"[ERROR] Failed loading vectorstore: {doc_id}"
             )
-
             print(
                 f"Path: {path}"
             )
@@ -204,11 +198,9 @@ def get_thread_retriever(
     )
 
     if not vectorstores and not repo_retrievers:
-
         print(
-            "❌ No vectorstores or repo retrievers could be loaded."
+            "[ERROR] No vectorstores or repo retrievers could be loaded."
         )
-
         return None
 
     # BUILD COMBINED RETRIEVER (SMART + REPO)
@@ -533,7 +525,7 @@ class SmartRetriever:
             except Exception as e:
 
                 print(
-                    f"❌ BM25 load error for vectorstore "
+                    f"[ERROR] BM25 load error for vectorstore "
                     f"{store_index + 1}: {e}"
                 )
 
@@ -673,7 +665,7 @@ class SmartRetriever:
             except Exception as e:
 
                 print(
-                    f"❌ Dense retrieval error "
+                    f"[ERROR] Dense retrieval error "
                     f"in store {store_index + 1}: {e}"
                 )
 
@@ -912,7 +904,8 @@ class SmartRetriever:
 
         # Filter candidate documents for query relevance:
         # A document is considered relevant if its top chunk has a positive BM25 score
-        # OR its hybrid score is at least 45% of the highest scored chunk across all documents.
+        # OR its hybrid score is at least 30% of the highest scored chunk across all documents
+        # OR its dense semantic similarity is at least 0.30.
         relevant_groups = {}
         for document_key, docs in grouped.items():
             if not docs:
@@ -920,11 +913,12 @@ class SmartRetriever:
             best_chunk = docs[0]
             best_score = best_chunk.metadata.get("hybrid_score", 0.0)
             bm25_score = best_chunk.metadata.get("bm25_score", 0.0)
+            dense_sim = best_chunk.metadata.get("dense_sim", 0.0)
 
-            if top_overall_score <= 0 or (best_score >= 0.45 * top_overall_score) or (bm25_score > 0):
+            if top_overall_score <= 0 or (best_score >= 0.30 * top_overall_score) or (bm25_score > 0) or (dense_sim >= 0.30):
                 relevant_groups[document_key] = docs
             else:
-                print(f"[BALANCED] Document '{document_key}' filtered out as irrelevant (score: {best_score:.4f} vs top {top_overall_score:.4f}, BM25: {bm25_score})")
+                print(f"[BALANCED] Document '{document_key}' filtered out as irrelevant (score: {best_score:.4f} vs top {top_overall_score:.4f}, BM25: {bm25_score}, dense_sim: {dense_sim:.4f})")
 
         # Fallback: if strict filtering excluded all documents, keep original grouping
         active_groups = relevant_groups if relevant_groups else grouped

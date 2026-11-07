@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import re
 from app.graph.state import ChatState
 from app.llm.llm_config import llm
 from app.prompts.rag import CRAG_RELEVANCE_PROMPT
 
-from langchain_core.messages import HumanMessage, ToolMessage
+from langchain_core.messages import HumanMessage, AIMessage, ToolMessage
 from app.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -13,7 +14,7 @@ logger = get_logger(__name__)
 def crag_relevance_grader(state: ChatState):
     """
     Evaluate whether the retrieved RAG context is relevant
-    to the user's question.
+    to the user's question, with full awareness of recent conversation context.
     """
 
     messages = state.get("messages", [])
@@ -54,11 +55,31 @@ def crag_relevance_grader(state: ChatState):
         }
 
     # ---------------------------------------------------------
+    # Extract recent conversation turns for coreference resolution
+    # ---------------------------------------------------------
+    context_turns = []
+    conv_history = [
+        m for m in messages
+        if isinstance(m, (HumanMessage, AIMessage)) and not getattr(m, "tool_calls", None)
+    ]
+    # Include up to last 4 conversation messages before the current question
+    for m in conv_history[-4:-1]:
+        role = "User" if isinstance(m, HumanMessage) else "Assistant"
+        raw_c = getattr(m, "content", "")
+        c_text = raw_c if isinstance(raw_c, str) else str(raw_c)
+        if c_text.strip():
+            context_turns.append(f"{role}: {c_text[:160].strip()}")
+    context_str = "\n".join(context_turns) if context_turns else "None (first turn)"
+
+    # ---------------------------------------------------------
     # Build grader prompt
     # ---------------------------------------------------------
 
     grader_prompt = f"""
 {CRAG_RELEVANCE_PROMPT}
+
+CONVERSATION CONTEXT (use this to resolve pronouns like 'it', 'they', 'this', or follow-up references):
+{context_str}
 
 USER QUESTION:
 {user_question}
@@ -96,7 +117,6 @@ RETRIEVED CONTEXT:
     logger.info(f"[CRAG] Raw LLM response: {repr(raw_content)}")
 
     cleaned = raw_content.strip().upper()
-    import re
     if re.search(r"\bGOOD\b", cleaned):
         grade = "GOOD"
     elif re.search(r"\bPARTIAL\b", cleaned):

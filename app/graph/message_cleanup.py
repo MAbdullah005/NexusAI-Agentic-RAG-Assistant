@@ -81,7 +81,7 @@ def _is_persistable_message(message: BaseMessage) -> bool:
     return False
 
 
-def cleanup_messages(state: ChatState,config=None):
+def cleanup_messages(state: ChatState, config=None):
     """
     Remove internal tool/retrieval/HITL workflow messages
     from persisted conversation history.
@@ -131,4 +131,5 @@ def cleanup_messages(state: ChatState,config=None):
         "rag_grade": "",
         "hitl_decision": "",
         "answer_source": "",
+        "rag_retry_count": 0,
     }

@@ -7,6 +7,7 @@ from app.prompts.rag import RAG_FINAL_ANSWER_PROMPT
 from langchain_core.messages import (
     SystemMessage,
     HumanMessage,
+    AIMessage,
     ToolMessage,
 )
 
@@ -52,6 +53,20 @@ def final_answer_node(
     )
 
     # ========================================================
+    # RECENT CONVERSATION HISTORY (for pronoun & coreference context)
+    # ========================================================
+
+    conv_history = [
+        m for m in state.get("messages", [])
+        if isinstance(m, (HumanMessage, AIMessage))
+        and not getattr(m, "tool_calls", None)
+        and getattr(m, "content", "")
+    ]
+    # Include up to last 4 conversation messages before the final answer prompt
+    if len(conv_history) > 1:
+        messages.extend(conv_history[-4:-1])
+
+    # ========================================================
     # EXTRACT USER QUESTION & RAG TOOL CONTEXT
     # ========================================================
 
@@ -82,8 +97,10 @@ USER QUESTION:
 
 INSTRUCTIONS:
 1. Ground your answer strictly in the retrieved source context above.
-2. If the context does not contain enough information to answer the question, clearly state: "The provided sources do not contain enough information to answer this question."
-3. Cite sources inline using MINIMAL, GROUPED citations:
+2. If only part of the answer is supported by the context, answer the supported parts accurately, and explicitly specify what information is not mentioned or missing from the provided documents.
+3. If the context does not contain enough information to answer the question, clearly state: "The provided sources do not contain enough information to answer this question."
+4. Never invent facts, document contents, page numbers, timestamps, filenames, or GitHub code.
+5. Cite sources inline using MINIMAL, GROUPED citations:
    - Place ONE citation at the end of each paragraph or grouped bullet section — not after every sentence.
    - If several facts in the same paragraph come from the same chunk, cite that source ONCE at the end of the group.
    - For GitHub chunks: each chunk header contains a "Citation Label" (e.g. [Source 1]) and a "Source Link" URL. Use exactly [Source N](URL) — copy the label and URL from the header. Reuse the same [Source N] label anywhere the same file and line range is cited again.
@@ -91,8 +108,8 @@ INSTRUCTIONS:
    - For YouTube videos: [YouTube: URL, Timestamp: MM:SS]
    - For Web articles: [Source: URL, Title: title]
    - Never repeat the same citation for the same claim. Never cite requirements.txt when implementation code is available.
-4. Do NOT add a "Sources & References" section at the end — inline citations are sufficient.
-5. Do not speculate or use ungrounded external assumptions for document-specific claims."""
+6. Do NOT add a "Sources & References" section at the end — inline citations are sufficient.
+7. Do not speculate or use ungrounded external assumptions for document-specific claims."""
 
     messages.append(HumanMessage(content=prompt_payload))
 

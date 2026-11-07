@@ -1241,3 +1241,273 @@ google.genai.errors.ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429,
 2026-11-06 00:55:27,377 | INFO | req:N/A | app.graph.agent_graph | [ROUTER] No tool requested -> memory_check
 2026-11-06 00:55:27,426 | INFO | req:N/A | app.graph.agent_graph | [MEMORY] Current message count: 2 (threshold: 12)
 2026-11-06 00:55:27,431 | INFO | req:N/A | app.graph.agent_graph | [MEMORY] Conversation size OK -> END
+2026-11-06 14:34:11,254 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-11-06 14:34:19,029 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-11-06 14:34:19,029 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-11-06 14:34:19,030 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-11-06 14:34:39,206 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-11-06 14:34:45,261 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-11-06 14:34:45,261 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-11-06 14:34:45,262 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-11-06 14:36:57,313 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-11-06 15:11:06,271 | INFO | req:N/A | app.tools.search_tool | Search tool called | query='LangGraph multi-agent'
+2026-11-06 15:11:06,273 | INFO | req:N/A | app.tools.search_tool | Using Tavily Search
+2026-11-06 15:11:12,615 | INFO | req:N/A | app.tools.search_tool | Tavily search completed successfully
+2026-11-06 15:23:24,771 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-11-06 15:23:29,835 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-11-06 15:23:29,835 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-11-06 15:23:29,835 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-11-06 15:23:51,466 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-11-06 15:23:54,978 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-11-06 15:23:54,978 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-11-06 15:23:54,979 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-11-06 15:24:38,154 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-11-06 15:24:42,878 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-11-06 15:24:42,885 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-11-06 15:24:42,886 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-11-06 15:25:04,330 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-11-06 15:25:08,691 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-11-06 15:25:08,692 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-11-06 15:25:08,692 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-11-06 15:25:18,994 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-11-06 15:25:22,474 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-11-06 15:25:22,475 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-11-06 15:25:22,475 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-11-06 15:25:58,645 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-11-06 15:26:01,699 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-11-06 15:26:01,699 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-11-06 15:26:01,700 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-11-06 15:28:21,510 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-11-06 15:28:21,510 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-11-06 15:28:22,184 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-11-06 15:28:25,037 | INFO | req:N/A | app.graph.research_graph | [RESEARCH GRAPH] Planning for query: 'What is LangGraph and how does multi-agent state persistence work?'
+2026-11-06 15:28:25,037 | INFO | req:N/A | app.llm.llm_config | Trying LLM provider: Gemini
+2026-11-06 15:28:26,524 | INFO | req:N/A | app.llm.llm_config | Initialized LLM provider: Gemini
+2026-11-06 15:28:31,794 | INFO | req:N/A | app.llm.llm_config | LLM request succeeded using Gemini
+2026-11-06 15:28:31,794 | INFO | req:N/A | app.graph.research_graph | [RESEARCH GRAPH] Generated sub-queries: ['What are the core architectural components of LangGraph, how does it facilitate cyclic execution flows, and what are its primary advantages over traditional LangChain chains for complex agentic workflows?', 'What are the specific mechanisms and data models LangGraph employs for multi-agent state persistence, including how state is updated, retrieved, and managed across different agent turns and graph cycles?']
+2026-11-06 15:28:31,799 | INFO | req:N/A | app.services.research.web_search | [DEEP RESEARCH WEB] Searching query='What are the core architectural components of LangGraph, how does it facilitate cyclic execution flows, and what are its primary advantages over traditional LangChain chains for complex agentic workflows?' (max_results=3)
+2026-11-06 15:28:31,801 | INFO | req:N/A | app.tools.search_tool | Search tool called | query='What are the core architectural components of LangGraph, how does it facilitate cyclic execution flows, and what are its primary advantages over traditional LangChain chains for complex agentic workflows?'
+2026-11-06 15:28:31,801 | INFO | req:N/A | app.tools.search_tool | Using Tavily Search
+2026-11-06 15:28:37,031 | INFO | req:N/A | app.tools.search_tool | Tavily search completed successfully
+2026-11-06 15:28:37,031 | INFO | req:N/A | app.services.research.web_search | [DEEP RESEARCH WEB] Retrieved 3 distinct results for 'What are the core architectural components of LangGraph, how does it facilitate cyclic execution flows, and what are its primary advantages over traditional LangChain chains for complex agentic workflows?'
+2026-11-06 15:28:37,031 | INFO | req:N/A | app.services.research.arxiv_search | [DEEP RESEARCH ARXIV] Searching query='What are the core architectural components of LangGraph, how does it facilitate cyclic execution flows, and what are its primary advantages over traditional LangChain chains for complex agentic workflows?' (max_results=2)
+2026-11-06 15:28:41,230 | INFO | req:N/A | app.services.research.arxiv_search | [DEEP RESEARCH ARXIV] Retrieved 2 papers for 'What are the core architectural components of LangGraph, how does it facilitate cyclic execution flows, and what are its primary advantages over traditional LangChain chains for complex agentic workflows?'
+2026-11-06 15:28:41,233 | INFO | req:N/A | app.services.research.web_search | [DEEP RESEARCH WEB] Searching query='What are the specific mechanisms and data models LangGraph employs for multi-agent state persistence, including how state is updated, retrieved, and managed across different agent turns and graph cycles?' (max_results=3)
+2026-11-06 15:28:41,235 | INFO | req:N/A | app.tools.search_tool | Search tool called | query='What are the specific mechanisms and data models LangGraph employs for multi-agent state persistence, including how state is updated, retrieved, and managed across different agent turns and graph cycles?'
+2026-11-06 15:28:41,235 | INFO | req:N/A | app.tools.search_tool | Using Tavily Search
+2026-11-06 15:28:46,800 | INFO | req:N/A | app.tools.search_tool | Tavily search completed successfully
+2026-11-06 15:28:46,801 | INFO | req:N/A | app.services.research.web_search | [DEEP RESEARCH WEB] Retrieved 3 distinct results for 'What are the specific mechanisms and data models LangGraph employs for multi-agent state persistence, including how state is updated, retrieved, and managed across different agent turns and graph cycles?'
+2026-11-06 15:28:46,801 | INFO | req:N/A | app.services.research.arxiv_search | [DEEP RESEARCH ARXIV] Searching query='What are the specific mechanisms and data models LangGraph employs for multi-agent state persistence, including how state is updated, retrieved, and managed across different agent turns and graph cycles?' (max_results=2)
+2026-11-06 15:28:53,583 | INFO | req:N/A | app.services.research.arxiv_search | [DEEP RESEARCH ARXIV] Retrieved 2 papers for 'What are the specific mechanisms and data models LangGraph employs for multi-agent state persistence, including how state is updated, retrieved, and managed across different agent turns and graph cycles?'
+2026-11-06 15:29:23,735 | INFO | req:N/A | app.services.research.filter | [DEEP RESEARCH FILTER] Curated 1 evidence items from 10 sources (7827 chars total)
+2026-11-06 15:29:23,738 | INFO | req:N/A | app.graph.research_graph | [RESEARCH GRAPH] Generating report (length=short, style=APA)
+2026-11-06 15:29:23,738 | INFO | req:N/A | app.llm.llm_config | Trying LLM provider: Gemini
+2026-11-06 15:29:25,484 | INFO | req:N/A | app.llm.llm_config | Initialized LLM provider: Gemini
+2026-11-06 15:29:46,731 | INFO | req:N/A | app.llm.llm_config | LLM request succeeded using Gemini
+2026-11-06 15:31:37,004 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-11-06 15:31:42,361 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-11-06 15:31:42,362 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-11-06 15:31:42,362 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-11-06 15:32:03,907 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-11-06 15:32:11,914 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-11-06 15:32:11,915 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-11-06 15:32:11,917 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-11-06 15:32:29,906 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-11-06 15:32:36,260 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-11-06 15:32:36,260 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-11-06 15:32:36,261 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-11-06 15:36:50,457 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-11-06 15:36:50,457 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-11-06 15:36:52,128 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-11-06 15:37:54,047 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-11-06 15:38:03,728 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-11-06 15:38:03,728 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-11-06 15:38:03,729 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-11-06 15:38:17,510 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-11-06 15:38:21,799 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-11-06 15:38:21,800 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-11-06 15:38:21,800 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-11-06 15:49:20,997 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-11-06 15:49:26,677 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-11-06 15:49:26,677 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-11-06 15:49:26,678 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-11-06 15:49:37,991 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-11-06 15:49:42,033 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-11-06 15:49:42,038 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-11-06 15:49:42,039 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-11-06 15:52:48,408 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-11-06 15:52:52,479 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-11-06 15:52:52,480 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-11-06 15:52:52,480 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-11-06 15:54:48,654 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-11-06 15:54:52,733 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-11-06 15:54:52,733 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-11-06 15:54:52,734 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-11-06 15:55:02,762 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-11-06 15:55:05,833 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-11-06 15:55:05,833 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-11-06 15:55:05,834 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-11-06 17:04:34,792 | INFO | req:N/A | AI-Agent | [SPLITTER] Chunking text (length: 20572) | chunk_size=1000, chunk_overlap=200
+2026-11-06 17:04:34,817 | INFO | req:N/A | AI-Agent | [SPLITTER] Produced 26 valid chunks
+2026-11-06 17:04:34,820 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-11-06 17:05:34,536 | INFO | req:N/A | app.llm.llm_config | Trying LLM provider: Gemini
+2026-11-06 17:05:34,882 | WARNING | req:N/A | AI-Agent | Historical context retrieval failed in chat_node: 'NoneType' object has no attribute 'cursor'
+2026-11-06 17:05:34,891 | INFO | req:N/A | AI-Agent | [CHAT NODE] Calling LLM with 2 messages (thread_id=72607880-1507-42a0-9190-c288cf06e403)
+2026-11-06 17:05:34,892 | INFO | req:N/A | app.llm.llm_config | Trying LLM provider: Gemini
+2026-11-06 17:05:36,551 | INFO | req:N/A | app.llm.llm_config | Initialized LLM provider: Gemini
+2026-11-06 17:05:36,762 | INFO | req:N/A | app.llm.llm_config | Initialized LLM provider: Gemini
+2026-11-06 17:05:36,763 | INFO | req:N/A | app.llm.llm_config | Binding tools to Gemini
+2026-11-06 17:05:39,602 | INFO | req:N/A | app.llm.llm_config | LLM request succeeded using Gemini
+2026-11-06 17:05:39,603 | INFO | req:N/A | AI-Agent | [CHAT NODE] LLM with tools responded: type=<class 'langchain_core.messages.ai.AIMessage'>
+2026-11-06 17:05:39,606 | INFO | req:N/A | app.graph.agent_graph | [ROUTER] LLM requested tool -> tools
+2026-11-06 17:05:39,660 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-11-06 17:05:42,439 | INFO | req:N/A | app.llm.llm_config | LLM request succeeded using Gemini
+2026-11-06 17:05:42,960 | INFO | req:N/A | AI-Agent | [RAG] Successfully compiled 6 context chunk(s) for query: Summarize the video and describe how the presenter was as a host.
+2026-11-06 17:05:42,965 | INFO | req:N/A | app.graph.agent_graph | [ROUTER] Tool executed: unified_rag_tool
+2026-11-06 17:05:42,965 | INFO | req:N/A | app.graph.agent_graph | [ROUTER] RAG tool detected -> CRAG grader
+2026-11-06 17:05:42,968 | INFO | req:N/A | app.graph.crag_grader | [CRAG GRADER] Evaluating retrieved context for user question: given you a viode give me thier summary and how was preserent as host in this vi
+2026-11-06 17:05:42,970 | INFO | req:N/A | app.llm.llm_config | Trying LLM provider: Gemini
+2026-11-06 17:05:44,822 | INFO | req:N/A | app.llm.llm_config | Initialized LLM provider: Gemini
+2026-11-06 17:05:58,193 | INFO | req:N/A | app.llm.llm_config | LLM request succeeded using Gemini
+2026-11-06 17:05:58,197 | INFO | req:N/A | app.graph.crag_grader | [CRAG] Raw LLM response: 'PARTIAL'
+2026-11-06 17:05:58,206 | INFO | req:N/A | app.graph.crag_grader | [CRAG] Evaluation complete -> Grade: PARTIAL
+2026-11-06 17:05:58,218 | INFO | req:N/A | app.graph.agent_graph | [CRAG ROUTER] Grade received: PARTIAL
+2026-11-06 17:05:58,222 | INFO | req:N/A | app.graph.agent_graph | [CRAG ROUTER] PARTIAL -> human_approval
+2026-11-06 17:06:39,825 | INFO | req:N/A | app.graph.agent_graph | [HITL ROUTER] Decision: no
+2026-11-06 17:06:39,827 | INFO | req:N/A | app.graph.agent_graph | [HITL ROUTER] NO -> final_answer (answering with available context)
+2026-11-06 17:06:39,836 | INFO | req:N/A | app.llm.llm_config | Trying LLM provider: Gemini
+2026-11-06 17:06:41,513 | INFO | req:N/A | app.llm.llm_config | Initialized LLM provider: Gemini
+2026-11-06 17:06:48,429 | INFO | req:N/A | app.llm.llm_config | LLM request succeeded using Gemini
+2026-11-06 17:06:48,435 | INFO | req:N/A | app.graph.agent_graph | [MEMORY] Current message count: 2 (threshold: 12)
+2026-11-06 17:06:48,438 | INFO | req:N/A | app.graph.agent_graph | [MEMORY] Conversation size OK -> END
+2026-11-07 14:14:32,395 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-11-07 14:14:37,327 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-11-07 14:14:37,327 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-11-07 14:14:37,328 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-11-07 14:14:49,031 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-11-07 14:14:52,635 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-11-07 14:14:52,635 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-11-07 14:14:52,636 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-11-07 14:15:24,433 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-11-07 14:15:32,037 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-11-07 14:15:32,037 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-11-07 14:15:32,037 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-11-07 14:15:52,078 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-11-07 14:15:57,927 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-11-07 14:15:57,927 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-11-07 14:15:57,928 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-11-07 14:16:15,407 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-11-07 14:16:20,575 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-11-07 14:16:20,575 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-11-07 14:16:20,576 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-11-07 14:16:42,946 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-11-07 14:16:50,438 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-11-07 14:16:50,438 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-11-07 14:16:50,438 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-11-07 14:17:54,852 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-11-07 14:17:59,052 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-11-07 14:17:59,053 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-11-07 14:17:59,053 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-11-07 14:18:46,640 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-11-07 14:18:50,891 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-11-07 14:18:50,891 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-11-07 14:18:50,892 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-11-07 14:20:51,472 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-11-07 14:20:58,050 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-11-07 14:20:58,052 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-11-07 14:20:58,054 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-11-07 14:23:14,873 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-11-07 14:23:24,301 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-11-07 14:23:24,301 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-11-07 14:23:24,305 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-11-07 14:26:18,498 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-11-07 14:26:21,675 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-11-07 14:31:39,413 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-11-07 14:31:44,935 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-11-07 14:31:44,935 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-11-07 14:31:44,936 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-11-07 14:31:57,879 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-11-07 14:32:02,287 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-11-07 14:32:02,288 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-11-07 14:32:02,288 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-11-07 14:32:14,166 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-11-07 14:32:17,989 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-11-07 14:32:17,990 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-11-07 14:32:17,990 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-11-07 14:33:07,701 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-11-07 14:59:22,771 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-11-07 14:59:27,738 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-11-07 14:59:27,738 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-11-07 14:59:27,741 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-11-07 15:02:34,625 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-11-07 15:02:40,594 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-11-07 15:02:40,596 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-11-07 15:02:40,599 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-11-07 15:03:28,301 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-11-07 15:03:34,118 | INFO | req:N/A | app.llm.llm_config | Runtime LLM fallback chain configured: Gemini -> Ollama
+2026-11-07 15:03:34,119 | INFO | req:N/A | app.llm.llm_config | Runtime title fallback chain configured: Gemini -> Ollama
+2026-11-07 15:03:34,119 | INFO | req:N/A | app.llm.llm_config | Binding 5 tools to runtime fallback LLM
+2026-11-07 15:13:30,726 | INFO | req:N/A | app.llm.llm_config | Trying LLM provider: Gemini
+2026-11-07 15:13:30,900 | WARNING | req:N/A | AI-Agent | Historical context retrieval failed in chat_node: 'NoneType' object has no attribute 'cursor'
+2026-11-07 15:13:30,910 | INFO | req:N/A | AI-Agent | [CHAT NODE] Calling LLM with 2 messages (thread_id=379c26e3-dcdd-4385-a7c9-5372f1def662)
+2026-11-07 15:13:30,911 | INFO | req:N/A | app.llm.llm_config | Trying LLM provider: Gemini
+2026-11-07 15:13:32,986 | INFO | req:N/A | app.llm.llm_config | Initialized LLM provider: Gemini
+2026-11-07 15:13:32,989 | INFO | req:N/A | app.llm.llm_config | Initialized LLM provider: Gemini
+2026-11-07 15:13:32,991 | INFO | req:N/A | app.llm.llm_config | Binding tools to Gemini
+2026-11-07 15:13:35,789 | INFO | req:N/A | app.llm.llm_config | LLM request succeeded using Gemini
+2026-11-07 15:13:35,789 | INFO | req:N/A | AI-Agent | [CHAT NODE] LLM with tools responded: type=<class 'langchain_core.messages.ai.AIMessage'>
+2026-11-07 15:13:35,790 | INFO | req:N/A | app.graph.agent_graph | [ROUTER] LLM requested tool -> tools
+2026-11-07 15:13:35,809 | INFO | req:N/A | app.llm.embeddings | Loading Google Embeddings
+2026-11-07 15:13:36,819 | INFO | req:N/A | app.llm.llm_config | LLM request succeeded using Gemini
+2026-11-07 15:13:40,039 | INFO | req:N/A | AI-Agent | [RAG] Successfully compiled 6 context chunk(s) for query: summary of the video and how the presenter was as a host in the video
+2026-11-07 15:13:40,041 | INFO | req:N/A | app.graph.agent_graph | [ROUTER] Tool executed: unified_rag_tool
+2026-11-07 15:13:40,127 | INFO | req:N/A | app.graph.agent_graph | [ROUTER] RAG tool detected -> CRAG grader
+2026-11-07 15:13:40,189 | INFO | req:N/A | app.graph.crag_grader | [CRAG GRADER] Evaluating retrieved context for user question: given you a viode give me thier summary and how was preserent as host in this vi
+2026-11-07 15:13:40,276 | INFO | req:N/A | app.llm.llm_config | Trying LLM provider: Gemini
+2026-11-07 15:13:42,110 | INFO | req:N/A | app.llm.llm_config | Initialized LLM provider: Gemini
+2026-11-07 15:13:48,780 | INFO | req:N/A | app.llm.llm_config | LLM request succeeded using Gemini
+2026-11-07 15:13:48,781 | INFO | req:N/A | app.graph.crag_grader | [CRAG] Raw LLM response: 'GOOD'
+2026-11-07 15:13:48,781 | INFO | req:N/A | app.graph.crag_grader | [CRAG] Evaluation complete -> Grade: GOOD
+2026-11-07 15:13:48,784 | INFO | req:N/A | app.graph.agent_graph | [CRAG ROUTER] Grade received: GOOD, retry_count: 0
+2026-11-07 15:13:48,785 | INFO | req:N/A | app.graph.agent_graph | [CRAG ROUTER] GOOD -> final_answer
+2026-11-07 15:13:48,803 | INFO | req:N/A | app.llm.llm_config | Trying LLM provider: Gemini
+2026-11-07 15:13:50,621 | INFO | req:N/A | app.llm.llm_config | Initialized LLM provider: Gemini
+2026-11-07 15:13:58,644 | INFO | req:N/A | app.llm.llm_config | LLM request succeeded using Gemini
+2026-11-07 15:13:58,653 | INFO | req:N/A | app.graph.agent_graph | [MEMORY] Current message count: 2 (threshold: 12)
+2026-11-07 15:13:58,654 | INFO | req:N/A | app.graph.agent_graph | [MEMORY] Conversation size OK -> END
+2026-11-07 15:15:26,418 | INFO | req:N/A | app.llm.llm_config | Trying LLM provider: Gemini
+2026-11-07 15:15:26,524 | INFO | req:N/A | app.graph.research_graph | [RESEARCH GRAPH] Planning for query: 'ok give me research about key vector role in self attension and how we improve it'
+2026-11-07 15:15:26,539 | INFO | req:N/A | app.llm.llm_config | Trying LLM provider: Gemini
+2026-11-07 15:15:28,664 | INFO | req:N/A | app.llm.llm_config | Initialized LLM provider: Gemini
+2026-11-07 15:15:28,699 | INFO | req:N/A | app.llm.llm_config | Initialized LLM provider: Gemini
+2026-11-07 15:15:31,740 | INFO | req:N/A | app.llm.llm_config | LLM request succeeded using Gemini
+2026-11-07 15:15:31,965 | INFO | req:N/A | app.llm.llm_config | LLM request succeeded using Gemini
+2026-11-07 15:15:31,966 | INFO | req:N/A | app.graph.research_graph | [RESEARCH GRAPH] Generated sub-queries: ['What is the precise mathematical and conceptual role of the key vector in the self-attention mechanism, particularly in computing attention scores and determining relevance?', 'What are the most recent and promising research directions or architectural modifications proposed to enhance the effectiveness or efficiency of key vectors in self-attention?', 'How do different key vector optimization strategies (e.g., learned transformations, sparse keys, dynamic keys) empirically affect model performance, computational cost, and memory footprint across various NLP tasks?']
+2026-11-07 15:15:31,975 | INFO | req:N/A | app.services.research.web_search | [DEEP RESEARCH WEB] Searching query='What is the precise mathematical and conceptual role of the key vector in the self-attention mechanism, particularly in computing attention scores and determining relevance?' (max_results=3)
+2026-11-07 15:15:31,980 | INFO | req:N/A | app.tools.search_tool | Search tool called | query='What is the precise mathematical and conceptual role of the key vector in the self-attention mechanism, particularly in computing attention scores and determining relevance?'
+2026-11-07 15:15:31,982 | INFO | req:N/A | app.tools.search_tool | Using Tavily Search
+2026-11-07 15:15:36,943 | INFO | req:N/A | app.tools.search_tool | Tavily search completed successfully
+2026-11-07 15:15:36,944 | INFO | req:N/A | app.services.research.web_search | [DEEP RESEARCH WEB] Retrieved 3 distinct results for 'What is the precise mathematical and conceptual role of the key vector in the self-attention mechanism, particularly in computing attention scores and determining relevance?'
+2026-11-07 15:15:36,945 | INFO | req:N/A | app.services.research.arxiv_search | [DEEP RESEARCH ARXIV] Searching query='What is the precise mathematical and conceptual role of the key vector in the self-attention mechanism, particularly in computing attention scores and determining relevance?' (max_results=2)
+2026-11-07 15:15:40,398 | INFO | req:N/A | app.services.research.arxiv_search | [DEEP RESEARCH ARXIV] Retrieved 2 papers for 'What is the precise mathematical and conceptual role of the key vector in the self-attention mechanism, particularly in computing attention scores and determining relevance?'
+2026-11-07 15:15:40,405 | INFO | req:N/A | app.services.research.web_search | [DEEP RESEARCH WEB] Searching query='What are the most recent and promising research directions or architectural modifications proposed to enhance the effectiveness or efficiency of key vectors in self-attention?' (max_results=3)
+2026-11-07 15:15:40,408 | INFO | req:N/A | app.tools.search_tool | Search tool called | query='What are the most recent and promising research directions or architectural modifications proposed to enhance the effectiveness or efficiency of key vectors in self-attention?'
+2026-11-07 15:15:40,409 | INFO | req:N/A | app.tools.search_tool | Using Tavily Search
+2026-11-07 15:15:44,576 | INFO | req:N/A | app.tools.search_tool | Tavily search completed successfully
+2026-11-07 15:15:44,577 | INFO | req:N/A | app.services.research.web_search | [DEEP RESEARCH WEB] Retrieved 3 distinct results for 'What are the most recent and promising research directions or architectural modifications proposed to enhance the effectiveness or efficiency of key vectors in self-attention?'
+2026-11-07 15:15:44,577 | INFO | req:N/A | app.services.research.arxiv_search | [DEEP RESEARCH ARXIV] Searching query='What are the most recent and promising research directions or architectural modifications proposed to enhance the effectiveness or efficiency of key vectors in self-attention?' (max_results=2)
+2026-11-07 15:15:47,555 | INFO | req:N/A | app.services.research.arxiv_search | [DEEP RESEARCH ARXIV] Retrieved 2 papers for 'What are the most recent and promising research directions or architectural modifications proposed to enhance the effectiveness or efficiency of key vectors in self-attention?'
+2026-11-07 15:15:47,556 | INFO | req:N/A | app.services.research.web_search | [DEEP RESEARCH WEB] Searching query='How do different key vector optimization strategies (e.g., learned transformations, sparse keys, dynamic keys) empirically affect model performance, computational cost, and memory footprint across various NLP tasks?' (max_results=3)
+2026-11-07 15:15:47,558 | INFO | req:N/A | app.tools.search_tool | Search tool called | query='How do different key vector optimization strategies (e.g., learned transformations, sparse keys, dynamic keys) empirically affect model performance, computational cost, and memory footprint across various NLP tasks?'
+2026-11-07 15:15:47,558 | INFO | req:N/A | app.tools.search_tool | Using Tavily Search
+2026-11-07 15:15:55,710 | INFO | req:N/A | app.tools.search_tool | Tavily search completed successfully
+2026-11-07 15:15:55,710 | INFO | req:N/A | app.services.research.web_search | [DEEP RESEARCH WEB] Retrieved 3 distinct results for 'How do different key vector optimization strategies (e.g., learned transformations, sparse keys, dynamic keys) empirically affect model performance, computational cost, and memory footprint across various NLP tasks?'
+2026-11-07 15:15:55,710 | INFO | req:N/A | app.services.research.arxiv_search | [DEEP RESEARCH ARXIV] Searching query='How do different key vector optimization strategies (e.g., learned transformations, sparse keys, dynamic keys) empirically affect model performance, computational cost, and memory footprint across various NLP tasks?' (max_results=2)
+2026-11-07 15:15:59,651 | INFO | req:N/A | app.services.research.arxiv_search | [DEEP RESEARCH ARXIV] Retrieved 2 papers for 'How do different key vector optimization strategies (e.g., learned transformations, sparse keys, dynamic keys) empirically affect model performance, computational cost, and memory footprint across various NLP tasks?'
+2026-11-07 15:16:16,804 | INFO | req:N/A | app.services.research.extractor | [DEEP RESEARCH EXTRACT] Timeout for https://www.articsledge.com/post/self-attention-mechanism; using snippet fallback
+2026-11-07 15:16:20,161 | INFO | req:N/A | app.services.research.extractor | [DEEP RESEARCH EXTRACT] HTTP 403 for https://www.sciencedirect.com/science/article/pii/S1574013726000468; using snippet
+2026-11-07 15:16:22,168 | INFO | req:N/A | app.services.research.filter | [DEEP RESEARCH FILTER] Curated 10 evidence items from 14 sources (17235 chars total)
+2026-11-07 15:16:22,171 | INFO | req:N/A | app.graph.research_graph | [RESEARCH GRAPH] Generating report (length=long, style=APA)
+2026-11-07 15:16:22,172 | INFO | req:N/A | app.llm.llm_config | Trying LLM provider: Gemini
+2026-11-07 15:16:23,700 | INFO | req:N/A | app.llm.llm_config | Initialized LLM provider: Gemini
+2026-11-07 15:17:09,039 | INFO | req:N/A | app.llm.llm_config | LLM request succeeded using Gemini
