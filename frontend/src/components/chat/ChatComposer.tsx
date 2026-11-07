@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { ArrowUp, Paperclip } from "lucide-react";
+import { ArrowUp, Paperclip, Sparkles, Sliders } from "lucide-react";
 import { Button } from "../ui/button";
 import { cn } from "../../lib/utils";
+import type { DeepResearchConfig } from "../../types/chat";
 
 interface ChatComposerProps {
   onSendMessage: (message: string) => void;
@@ -11,6 +12,10 @@ interface ChatComposerProps {
   onOpenSourceModal?: () => void;
   placeholder?: string;
   theme?: "light" | "dark";
+  isDeepResearch?: boolean;
+  onToggleDeepResearch?: () => void;
+  onOpenResearchConfig?: () => void;
+  researchConfig?: DeepResearchConfig;
 }
 
 export function ChatComposer({
@@ -19,6 +24,10 @@ export function ChatComposer({
   onOpenSourceModal,
   placeholder = "Ask NexusAI",
   theme = "light",
+  isDeepResearch = false,
+  onToggleDeepResearch,
+  onOpenResearchConfig,
+  researchConfig,
 }: ChatComposerProps) {
   const [input, setInput] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -65,7 +74,11 @@ export function ChatComposer({
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={placeholder}
+          placeholder={
+            isDeepResearch
+              ? "Ask a question for Deep Research (investigating Web, arXiv, and Docs)..."
+              : placeholder
+          }
           disabled={disabled}
           className={cn(
             "w-full resize-none bg-transparent px-4 pt-3.5 pb-12 text-sm focus:outline-none disabled:opacity-50 min-h-[52px] max-h-[180px]",
@@ -76,7 +89,7 @@ export function ChatComposer({
         />
 
         <div className="absolute bottom-2.5 left-3 right-3 flex items-center justify-between">
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 flex-wrap">
             {onOpenSourceModal && (
               <Button
                 type="button"
@@ -94,6 +107,58 @@ export function ChatComposer({
                 <Paperclip className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">Attach Source</span>
               </Button>
+            )}
+
+            {onToggleDeepResearch && (
+              <div className="flex items-center gap-1">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={onToggleDeepResearch}
+                  className={cn(
+                    "h-8 gap-1.5 rounded-lg px-2.5 text-xs border transition-all",
+                    isDeepResearch
+                      ? "border-rose-500 bg-rose-500/15 text-rose-600 dark:text-rose-400 font-semibold shadow-xs ring-1 ring-rose-500/30"
+                      : isLight
+                      ? "border-slate-200/80 text-slate-600 hover:text-rose-600 hover:bg-rose-50/60"
+                      : "border-zinc-800 text-zinc-400 hover:text-rose-300 hover:bg-zinc-800/60"
+                  )}
+                  title="Toggle Deep Research Mode (Web + arXiv + Docs)"
+                >
+                  <Sparkles
+                    className={cn(
+                      "h-3.5 w-3.5 transition-colors",
+                      isDeepResearch ? "text-rose-500 fill-rose-500/30" : "text-slate-400 dark:text-zinc-500"
+                    )}
+                  />
+                  <span>Deep Research</span>
+                  {isDeepResearch && (
+                    <span className="ml-0.5 text-[9px] font-extrabold uppercase tracking-wider text-rose-600 dark:text-rose-400 bg-rose-100 dark:bg-rose-950/80 px-1 py-0.2 rounded">
+                      ON
+                    </span>
+                  )}
+                </Button>
+
+                {isDeepResearch && onOpenResearchConfig && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={onOpenResearchConfig}
+                    className={cn(
+                      "h-8 w-8 rounded-lg border text-xs transition-all",
+                      isLight
+                        ? "border-slate-200/80 text-slate-500 hover:text-rose-600 hover:bg-rose-50/60"
+                        : "border-zinc-800 text-zinc-400 hover:text-rose-300 hover:bg-zinc-800/60"
+                    )}
+                    title="Configure Deep Research settings (length, citation style, search count)"
+                  >
+                    <Sliders className="h-3.5 w-3.5 text-rose-500 dark:text-rose-400" />
+                    <span className="sr-only">Configure Deep Research</span>
+                  </Button>
+                )}
+              </div>
             )}
           </div>
 

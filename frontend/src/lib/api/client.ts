@@ -14,6 +14,11 @@ import type {
   HITLResumeResponse,
   Thread,
   ThreadDetails,
+  ResearchRequest,
+  ResearchResponse,
+  ResearchStageUpdate,
+  ResearchSource,
+  DeepResearchConfig,
 } from "../../types/chat";
 import type {
   SetYoutubeResponse,
@@ -187,6 +192,126 @@ export const api = {
       method: "POST",
       body: JSON.stringify(data),
     });
+  },
+
+  async sendResearch(data: ResearchRequest): Promise<ResearchResponse> {
+    return request<ResearchResponse>("/chat/research", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  streamResearch(
+    data: ResearchRequest,
+    onStageUpdate: (update: ResearchStageUpdate) => void,
+    onComplete: (report: string, sources?: ResearchSource[]) => void,
+    onError: (error: any) => void
+  ): () => void {
+    const controller = new AbortController();
+    const token = getAccessToken();
+    const url = `${API_BASE_URL}/chat/research/stream`;
+
+    (async () => {
+      try {
+        const response = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify(data),
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          let errText = `Research stream failed with status ${response.status}`;
+          try {
+            const errJson = await response.json();
+            if (errJson?.detail) errText = errJson.detail;
+          } catch {
+            // ignore
+          }
+          throw new Error(errText);
+        }
+
+        if (!response.body) {
+          throw new Error("No response body received from research stream");
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder("utf-8");
+        let buffer = "";
+        let finalReport = "";
+        let collectedSources: ResearchSource[] = [];
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n\n");
+          buffer = lines.pop() || "";
+
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed.startsWith("data:")) continue;
+
+            const payloadStr = trimmed.replace(/^data:\s*/, "");
+            if (payloadStr === "[DONE]") {
+              if (finalReport) {
+                onComplete(finalReport, collectedSources);
+              }
+              return;
+            }
+
+            try {
+              const parsed: ResearchStageUpdate = JSON.parse(payloadStr);
+              if (parsed.sources && parsed.sources.length > 0) {
+                collectedSources = parsed.sources;
+              }
+              if (parsed.report) {
+                finalReport = parsed.report;
+              }
+
+              onStageUpdate(parsed);
+
+              if (parsed.stage === "completed" && parsed.report) {
+                onComplete(parsed.report, parsed.sources || collectedSources);
+              } else if (parsed.stage === "error") {
+                onError(new Error(parsed.stage_message || "Research failed"));
+              }
+            } catch (jsonErr) {
+              console.warn("Failed to parse SSE research chunk:", payloadStr, jsonErr);
+            }
+          }
+        }
+
+        // Handle trailing buffer if any
+        if (buffer.trim().startsWith("data:")) {
+          const payloadStr = buffer.trim().replace(/^data:\s*/, "");
+          if (payloadStr !== "[DONE]") {
+            try {
+              const parsed: ResearchStageUpdate = JSON.parse(payloadStr);
+              if (parsed.report) finalReport = parsed.report;
+              onStageUpdate(parsed);
+              if (parsed.stage === "completed" && parsed.report) {
+                onComplete(parsed.report, parsed.sources || collectedSources);
+              }
+            } catch {
+              // ignore
+            }
+          }
+        }
+      } catch (err: any) {
+        if (err.name === "AbortError") {
+          console.log("Research stream aborted by user");
+          return;
+        }
+        onError(err);
+      }
+    })();
+
+    return () => controller.abort();
   },
 
   async resumeChat(data: HITLResumeRequest): Promise<HITLResumeResponse> {

@@ -5,6 +5,8 @@ export interface ChatMessage {
   createdAt?: string;
   pending?: boolean;
   error?: boolean;
+  is_research?: boolean;
+  research_sources?: ResearchSource[];
 }
 
 export interface Thread {
@@ -40,6 +42,8 @@ export interface ChatRequest {
   thread_id: string;
   client_message_id?: string;
   selected_doc_ids?: string[];
+  deep_research?: boolean;
+  config?: DeepResearchConfig;
 }
 
 export interface HITLInterruptData {
@@ -55,6 +59,51 @@ export interface ChatResponse {
   interrupt?: HITLInterruptData;
   detail?: string;
   message?: string;
+  sources?: ResearchSource[];
+  sub_queries?: string[];
+}
+
+export interface ResearchSource {
+  title: string;
+  url: string;
+  source_type?: "web" | "arxiv" | "document" | string;
+  published_date?: string | null;
+  authors?: string[];
+}
+
+export interface DeepResearchConfig {
+  search_count?: number;
+  report_length?: "short" | "medium" | "long";
+  citation_style?: "APA" | "MLA" | "Harvard";
+  iterations?: number;
+  subqueries_count?: number;
+  instructions?: string;
+}
+
+export interface ResearchStageUpdate {
+  stage: "planning" | "searching" | "extracting" | "filtering" | "generating" | "completed" | "error";
+  stage_message: string;
+  sub_queries?: string[];
+  sources?: ResearchSource[];
+  evidence_count?: number;
+  report?: string;
+}
+
+export interface ResearchRequest {
+  message: string;
+  thread_id: string;
+  client_message_id?: string;
+  selected_doc_ids?: string[];
+  config?: DeepResearchConfig;
+}
+
+export interface ResearchResponse {
+  status: "completed" | "error";
+  thread_id: string;
+  response: string;
+  sources?: ResearchSource[];
+  sub_queries?: string[];
+  detail?: string;
 }
 
 export interface HITLResumeRequest {

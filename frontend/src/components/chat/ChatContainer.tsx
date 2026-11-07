@@ -6,8 +6,9 @@ import { Button } from "../ui/button";
 import { ChatMessageItem } from "./ChatMessageItem";
 import { HITLBanner } from "./HITLBanner";
 import { ChatComposer } from "./ChatComposer";
+import { ResearchProgress } from "./ResearchProgress";
 import { cn } from "../../lib/utils";
-import type { AttachedDocument, ChatMessage, HITLInterruptData, Thread } from "../../types/chat";
+import type { AttachedDocument, ChatMessage, HITLInterruptData, Thread, ResearchStageUpdate, DeepResearchConfig } from "../../types/chat";
 
 interface ChatContainerProps {
   activeThread: Thread | null;
@@ -25,6 +26,11 @@ interface ChatContainerProps {
   onSelectMobileTab?: (tab: "chat" | "sources") => void;
   theme?: "light" | "dark";
   onToggleTheme?: () => void;
+  isDeepResearch?: boolean;
+  onToggleDeepResearch?: () => void;
+  onOpenResearchConfig?: () => void;
+  researchConfig?: DeepResearchConfig;
+  activeResearchUpdate?: ResearchStageUpdate | null;
 }
 
 export function ChatContainer({
@@ -43,16 +49,21 @@ export function ChatContainer({
   onSelectMobileTab,
   theme = "light",
   onToggleTheme,
+  isDeepResearch = false,
+  onToggleDeepResearch,
+  onOpenResearchConfig,
+  researchConfig,
+  activeResearchUpdate,
 }: ChatContainerProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const isLight = theme === "light";
 
-  // Auto-scroll on new messages or interrupt
+  // Auto-scroll on new messages, interrupt, or research stage update
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages, pending, hitlInterrupt]);
+  }, [messages, pending, hitlInterrupt, activeResearchUpdate]);
 
   return (
     <div
@@ -259,7 +270,11 @@ export function ChatContainer({
               />
             ))}
 
-            {pending && (
+            {activeResearchUpdate ? (
+              <div className="flex justify-start">
+                <ResearchProgress update={activeResearchUpdate} theme={theme} />
+              </div>
+            ) : pending ? (
               <ChatMessageItem
                 message={{
                   role: "assistant",
@@ -270,7 +285,7 @@ export function ChatContainer({
                 onViewPdf={onViewPdf}
                 theme={theme}
               />
-            )}
+            ) : null}
           </div>
         )}
 
@@ -300,6 +315,10 @@ export function ChatContainer({
           onOpenSourceModal={onOpenSourceModal}
           placeholder="Ask NexusAI"
           theme={theme}
+          isDeepResearch={isDeepResearch}
+          onToggleDeepResearch={onToggleDeepResearch}
+          onOpenResearchConfig={onOpenResearchConfig}
+          researchConfig={researchConfig}
         />
       </footer>
     </div>

@@ -9,8 +9,17 @@ import { ChatContainer } from "../components/chat/ChatContainer";
 import { SourceWorkspace } from "../components/sources/SourceWorkspace";
 import { SourceIngestModal } from "../components/sidebar/SourceIngestModal";
 import { DocumentViewerModal } from "../components/viewer/DocumentViewerModal";
+import { DeepResearchModal } from "../components/chat/DeepResearchModal";
 import { cn } from "../lib/utils";
-import type { AttachedDocument, ChatMessage, HITLInterruptData, Thread } from "../types/chat";
+import type {
+  AttachedDocument,
+  ChatMessage,
+  HITLInterruptData,
+  Thread,
+  DeepResearchConfig,
+  ResearchStageUpdate,
+  ResearchSource,
+} from "../types/chat";
 
 export default function ChatPage() {
   const router = useRouter();
@@ -27,6 +36,20 @@ export default function ChatPage() {
   const [creatingThread, setCreatingThread] = useState<boolean>(false);
   const [pendingMessage, setPendingMessage] = useState<boolean>(false);
   const [hitlInterrupt, setHitlInterrupt] = useState<HITLInterruptData | null>(null);
+
+  // Deep Research state
+  const [isDeepResearch, setIsDeepResearch] = useState<boolean>(false);
+  const [researchConfig, setResearchConfig] = useState<DeepResearchConfig>({
+    search_count: 10,
+    report_length: "long",
+    citation_style: "APA",
+    subqueries_count: 3,
+    iterations: 1,
+    instructions: "",
+  });
+  const [researchModalOpen, setResearchModalOpen] = useState<boolean>(false);
+  const [activeResearchUpdate, setActiveResearchUpdate] = useState<ResearchStageUpdate | null>(null);
+  const researchAbortRef = useRef<(() => void) | null>(null);
 
   // Theme state: defaults to light mode
   const [theme, setTheme] = useState<"light" | "dark">("light");
@@ -120,6 +143,11 @@ export default function ChatPage() {
   // Load active thread details (messages, documents, summary)
   const loadThreadDetails = useCallback(async (threadId: string) => {
     try {
+      if (researchAbortRef.current) {
+        researchAbortRef.current();
+        researchAbortRef.current = null;
+      }
+      setActiveResearchUpdate(null);
       setHitlInterrupt(null);
       const details = await api.getThreadDetails(threadId);
 
@@ -185,6 +213,11 @@ export default function ChatPage() {
     }
 
     // Reset to an empty temporary chat session without saving anything to DB or sidebar
+    if (researchAbortRef.current) {
+      researchAbortRef.current();
+      researchAbortRef.current = null;
+    }
+    setActiveResearchUpdate(null);
     setActiveThreadId(null);
     setMessages([]);
     setDocuments([]);
@@ -313,6 +346,59 @@ export default function ChatPage() {
             ];
           });
         });
+    }
+
+    // ========================================================
+    // DEEP RESEARCH STREAMING EXECUTION
+    // ========================================================
+    if (isDeepResearch) {
+      setPendingMessage(true);
+      setActiveResearchUpdate({
+        stage: "planning",
+        stage_message: "Initializing Deep Research investigation...",
+      });
+
+      const abortFn = api.streamResearch(
+        {
+          thread_id: currentThreadId,
+          message: text,
+          client_message_id: clientMsgId,
+          selected_doc_ids: selectedDocIds.length > 0 ? selectedDocIds : undefined,
+          config: researchConfig,
+        },
+        (update: ResearchStageUpdate) => {
+          setActiveResearchUpdate(update);
+        },
+        (report: string, sources?: ResearchSource[]) => {
+          setActiveResearchUpdate(null);
+          setPendingMessage(false);
+          const assistantMsg: ChatMessage = {
+            id: `resp_${clientMsgId}`,
+            role: "assistant",
+            content: report,
+            createdAt: new Date().toISOString(),
+            is_research: true,
+            research_sources: sources,
+          };
+          setMessages((prev) => [...prev, assistantMsg]);
+        },
+        (err: any) => {
+          console.error("Deep Research streaming error:", err);
+          setActiveResearchUpdate(null);
+          setPendingMessage(false);
+          setMessages((prev) => [
+            ...prev,
+            {
+              role: "assistant",
+              content: `⚠️ Deep Research Error: ${err?.message || "Failed to complete research."}`,
+              createdAt: new Date().toISOString(),
+              error: true,
+            },
+          ]);
+        }
+      );
+      researchAbortRef.current = abortFn;
+      return;
     }
 
     try {
@@ -472,6 +558,11 @@ export default function ChatPage() {
             onSelectMobileTab={(tab) => setActiveMobileTab(tab)}
             theme={theme}
             onToggleTheme={toggleTheme}
+            isDeepResearch={isDeepResearch}
+            onToggleDeepResearch={() => setIsDeepResearch((prev) => !prev)}
+            onOpenResearchConfig={() => setResearchModalOpen(true)}
+            researchConfig={researchConfig}
+            activeResearchUpdate={activeResearchUpdate}
           />
         </div>
 
@@ -536,6 +627,15 @@ export default function ChatPage() {
           page={viewerDoc.page}
         />
       )}
+
+      {/* Deep Research Configuration Modal */}
+      <DeepResearchModal
+        open={researchModalOpen}
+        onOpenChange={setResearchModalOpen}
+        config={researchConfig}
+        onSaveConfig={(newConfig) => setResearchConfig(newConfig)}
+        theme={theme}
+      />
     </div>
   );
 }
